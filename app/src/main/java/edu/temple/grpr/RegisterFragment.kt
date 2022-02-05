@@ -5,28 +5,15 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [RegisterFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RegisterFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
     }
 
     override fun onCreateView(
@@ -34,26 +21,59 @@ class RegisterFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_register, container, false)
+        val layout = inflater.inflate(R.layout.fragment_register, container, false)
+        val firstName = layout.findViewById<TextView>(R.id.editTextFirstName)
+        val lastName = layout.findViewById<TextView>(R.id.editTextLastName)
+        val username = layout.findViewById<TextView>(R.id.editTextUserNameRegister)
+        val password = layout.findViewById<TextView>(R.id.editTextPasswordRegister)
+        val confirmPassword = layout.findViewById<TextView>(R.id.editTextPasswordConfirm)
+        val registerButton = layout.findViewById<Button>(R.id.registerButton)
+
+        registerButton.setOnClickListener(){
+            var error = false
+            if (username.text.isEmpty()){
+                username.error="Input username"
+                error = true
+            }
+            if (firstName.text.isEmpty()){
+                firstName.error="Input first name"
+                error = true
+            }
+            if (lastName.text.isEmpty()){
+                lastName.error="Input last name"
+                error = true
+            }
+            if (password.text.isEmpty()){
+                password.error="Input password"
+                error = true
+            }
+            if (confirmPassword.text.isEmpty()){
+                confirmPassword.error="Input password"
+                error = true
+            }
+            if (password.text.toString()!=confirmPassword.text.toString()){
+                confirmPassword.error="Passwords do not match"
+                error = true
+            }
+
+            if (!error){
+                register(firstName.text.toString(), lastName.text.toString(), username.text.toString(), password.text.toString())
+            }
+        }
+        return layout
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment RegisterFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            RegisterFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    fun register(firstName: String, lastName: String, username: String, password: String){
+        //call to Volley
+
+        //if successful let activity know (and save data)
+        (activity as registerInterface).registerSuccessful()
+
+        //else let user know
     }
+
+    interface registerInterface{
+        fun registerSuccessful()
+    }
+
 }

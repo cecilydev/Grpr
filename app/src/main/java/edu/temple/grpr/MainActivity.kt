@@ -3,8 +3,10 @@ package edu.temple.grpr
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import edu.temple.grpr.RegisterFragment.*
+import edu.temple.grpr.LoginFragment.*
 
-class MainActivity : AppCompatActivity(), LoginFragment.loginInterface  {
+class MainActivity : AppCompatActivity(), loginInterface, registerInterface  {
 
     private lateinit var loginFragment : LoginFragment
     private lateinit var registerFragment: RegisterFragment
@@ -43,6 +45,10 @@ class MainActivity : AppCompatActivity(), LoginFragment.loginInterface  {
     }
 
     override fun loginSuccessful() {
+        //switch fragment to map
+    }
+
+    override fun registerSuccessful() {
         //switch fragment to map
     }
 }
