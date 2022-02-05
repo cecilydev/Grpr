@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Grpr</string>
+    <string name="register_message">Are you a new user? <b><u>Register</u></b></string>
 </resources>
