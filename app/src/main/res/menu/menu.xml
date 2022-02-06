@@ -3,9 +3,30 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/groups"
+        android:icon="@drawable/ic_manage_accounts_white_24dp"
+        android:title="Groups"
+        app:showAsAction="always">
+        <menu>
+
+
+            <item
+                android:id="@+id/create"
+                android:title="Create Group" />
+            <item
+                android:id="@+id/join"
+                android:title="Join Group" />
+            <item
+                android:id="@+id/leave"
+                android:title="Leave Group" />
+        </menu>
+    </item>
+        />
+    <item
         android:id="@+id/logout"
         android:enabled="true"
         android:title="Logout"
         android:visible="true"
-        app:showAsAction="always" />
+        app:showAsAction="always"
+        />
 </menu>

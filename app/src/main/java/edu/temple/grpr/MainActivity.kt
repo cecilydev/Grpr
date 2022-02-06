@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import edu.temple.grpr.LoginFragment
 import edu.temple.grpr.LoginFragment.*
 import edu.temple.grpr.MapsFragment
@@ -54,9 +55,10 @@ class MainActivity : AppCompatActivity(), loginInterface {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        val item = menu?.findItem(R.id.logout)
-        if (item != null)
-            item.setVisible(MAP)
+        val itemLogout = menu?.findItem(R.id.logout)
+        val itemSetting = menu?.findItem(R.id.groups)
+        if (itemLogout != null) itemLogout.setVisible(MAP)
+        if(itemSetting !=null) itemSetting.setVisible(MAP)
         return super.onPrepareOptionsMenu(menu)
     }
 
