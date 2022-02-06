@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Grpr</string>
     <string name="register_message">Are you a new user? <b><u>Register</u></b></string>
+    <string name="login_message">Return to <b><u>Login</u></b></string>
     <string name="register">Register</string>
     <string name="login">Login</string>
 </resources>
