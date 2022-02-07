@@ -2,6 +2,7 @@ package edu.temple.grpr
 
 import android.content.Context
 import android.os.Bundle
+import android.provider.Settings.Global.getString
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.android.volley.toolbox.StringRequest
@@ -86,17 +88,16 @@ class LoginFragment : Fragment() {
                val resp_json = JSONObject(it.toString())
                 //save data and open map
                 if (resp_json.get("status")=="SUCCESS"){
-                        //get token and other info saved
-                        (activity as loginInterface).loginSuccessful()
-
+                    (activity as loginInterface).updateData(username.text.toString(), resp_json.getString("session_key"))
+                    (activity as loginInterface).loginSuccessful()
                 //show the error to the user
                 }else {
-                    error.text = "ERROR: " + resp_json.get("message").toString()
+                    error.text = getString((R.string.error), resp_json.get("message"))
                     error.visibility = View.VISIBLE
                 }
             },
-            {/*error stuff here*/
-            }) {
+            {})
+            {
             override fun getBodyContentType(): String {
                 return "application/x-www-form-urlencoded"
             }
@@ -167,6 +168,7 @@ class LoginFragment : Fragment() {
 
 
     interface loginInterface{
+        fun updateData(username: String, session_key: String)
         fun loginSuccessful()
     }
 
