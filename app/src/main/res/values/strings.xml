@@ -4,4 +4,5 @@
     <string name="login_message">Return to <b><u>Login</u></b></string>
     <string name="register">Register</string>
     <string name="login">Login</string>
+    <string name="group">Group </string>
 </resources>

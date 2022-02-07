@@ -1,5 +1,6 @@
 package edu.temple.grpr
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -8,7 +9,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import org.w3c.dom.Text
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import com.android.volley.toolbox.StringRequest
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
 
 class LoginFragment : Fragment() {
@@ -21,6 +27,9 @@ class LoginFragment : Fragment() {
     lateinit var confirmPassword: TextView
     lateinit var login: Button
     lateinit var message: TextView
+    lateinit var error: TextView
+
+    val url = "https://kamorris.com/lab/grpr/account.php"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +47,8 @@ class LoginFragment : Fragment() {
         confirmPassword = layout.findViewById(R.id.editTextPasswordConfirm)
         login = layout.findViewById(R.id.loginButton)
         message = layout.findViewById(R.id.textViewRegisterOrLogin)
+        error = layout.findViewById(R.id.textViewError)
+
 
         login.setOnClickListener(){
             if (REGISTER)  registerCheck()
@@ -51,11 +62,13 @@ class LoginFragment : Fragment() {
                 firstName.visibility = View.GONE
                 lastName.visibility = View.GONE
                 confirmPassword.visibility = View.GONE
+                login.setText(R.string.login)
             } else{
                 message.setText(R.string.login_message)
                 firstName.visibility = View.VISIBLE
                 lastName.visibility = View.VISIBLE
                 confirmPassword.visibility = View.VISIBLE
+                login.setText(R.string.register)
             }
             REGISTER = !REGISTER
         }
@@ -66,11 +79,43 @@ class LoginFragment : Fragment() {
 
     fun login(){
         //Volley request
+        val volleyQueue = Volley.newRequestQueue(this.context)
+        val stringRequest: StringRequest = object : StringRequest(
+            Method.POST, url,
+            {
+               val resp_json = JSONObject(it.toString())
+                //save data and open map
+                if (resp_json.get("status")=="SUCCESS"){
+                        //get token and other info saved
+                        (activity as loginInterface).loginSuccessful()
 
-        //if success, save data and let main activity know (so it can switch to map)
-        (activity as loginInterface).loginSuccessful()
-        //else let user know
-
+                //show the error to the user
+                }else {
+                    error.text = "ERROR: " + resp_json.get("message").toString()
+                    error.visibility = View.VISIBLE
+                }
+            },
+            {/*error stuff here*/
+            }) {
+            override fun getBodyContentType(): String {
+                return "application/x-www-form-urlencoded"
+            }
+            override fun getParams(): MutableMap<String, String> {
+                val params: MutableMap<String, String> = HashMap()
+                params["username"] = username.text.toString()
+                params["password"] = password.text.toString()
+                if (REGISTER){
+                    params["action"] = "REGISTER"
+                    params["firstname"] = firstName.text.toString()
+                    params["lastname"] = lastName.text.toString()
+                } else {
+                    params["action"] = "LOGIN"
+                }
+                return params
+            }
+        }
+        //val data= "action=LOGIN&username=" + username.text.toString() + "&password=" + password.text.toString()
+        volleyQueue.add(stringRequest)
     }
 
     fun loginCheck(){
@@ -86,15 +131,6 @@ class LoginFragment : Fragment() {
         if (!error){
             login()
         }
-    }
-
-    fun register(){
-        //Volley request
-
-        //if success, save data and let main activity know (so it can switch to map)
-        (activity as loginInterface).loginSuccessful()
-        //else let user know
-
     }
 
     fun registerCheck() {
@@ -125,7 +161,7 @@ class LoginFragment : Fragment() {
         }
 
         if (!error){
-            register()
+            login()
         }
     }
 

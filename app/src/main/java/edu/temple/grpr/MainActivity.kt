@@ -24,17 +24,10 @@ class MainActivity : AppCompatActivity(), loginInterface {
         setContentView(R.layout.activity_main)
 
         val preferences = getSharedPreferences(LOGIN_DATA, MODE_PRIVATE)
-        val token = preferences.getString("TOKEN", null)
-
+        var token = preferences.getString("TOKEN", null)
 
         if(token==null){
-            loginFragment = LoginFragment()
-            supportFragmentManager.beginTransaction()
-                .add(R.id.fragmentContainerView, loginFragment)
-                .commit()
-            MAP = false
-            invalidateOptionsMenu()
-
+            loginScreen()
         } else {
             //mapFragment
             mapFragment = MapsFragment()
@@ -81,10 +74,19 @@ class MainActivity : AppCompatActivity(), loginInterface {
         invalidateOptionsMenu()
     }
 
+    fun loginScreen(){
+        loginFragment = LoginFragment()
+        supportFragmentManager.beginTransaction()
+            .add(R.id.fragmentContainerView, loginFragment)
+            .commit()
+        MAP = false
+        invalidateOptionsMenu()
+    }
+
     fun logout() {
         //wipe token/login data
-        //exit app
-        finish()
+        //return to login page
+        loginScreen()
     }
 
 

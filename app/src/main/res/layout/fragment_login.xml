@@ -87,12 +87,24 @@
         android:id="@+id/loginButton"
         android:layout_width="149dp"
         android:layout_height="52dp"
+        android:layout_marginTop="20dp"
         android:text="@string/login"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.164"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewRegisterOrLogin"
-        app:layout_constraintVertical_bias="0.092" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewRegisterOrLogin" />
+
+    <TextView
+        android:id="@+id/textViewError"
+        android:layout_width="333dp"
+        android:layout_height="105dp"
+        android:textColor="@color/design_default_color_error"
+        android:textStyle="italic"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/loginButton"
+        app:layout_constraintVertical_bias="0.103" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
