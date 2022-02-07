@@ -115,8 +115,7 @@ class LoginFragment : Fragment() {
                 return params
             }
         }
-        //val data= "action=LOGIN&username=" + username.text.toString() + "&password=" + password.text.toString()
-        volleyQueue.add(stringRequest)
+       volleyQueue.add(stringRequest)
     }
 
     fun loginCheck(){

@@ -1,6 +1,5 @@
 package edu.temple. grpr
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -8,14 +7,13 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import edu.temple.grpr.LoginFragment
 import edu.temple.grpr.LoginFragment.*
-import edu.temple.grpr.MapsFragment
-import edu.temple.grpr.R
-import org.w3c.dom.Text
+import org.json.JSONObject
 
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
@@ -33,6 +31,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
     lateinit var group_id: String
     lateinit var token: String
     lateinit var username: String
+    val url = "https://kamorris.com/lab/grpr/account.php"
     var MAP = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,19 +73,26 @@ class MainActivity : AppCompatActivity(), loginInterface {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        val itemLogout = menu?.findItem(R.id.logout)
+        val itemLogout = menu?.findItem(R.id.action_logout)
         val itemSetting = menu?.findItem(R.id.groups)
         if (itemLogout != null) itemLogout.setVisible(MAP)
         if(itemSetting !=null) itemSetting.setVisible(MAP)
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId==R.id.logout) {
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.action_logout -> {
             logout()
-            return true
+            true
         }
-        return false
+
+        R.id.action_create -> {
+            true
+        }
+
+        else -> {
+            false
+        }
     }
 
     override fun updateData(username: String, session_key: String) {
@@ -126,9 +132,37 @@ class MainActivity : AppCompatActivity(), loginInterface {
     }
 
     fun logout() {
-        //wipe token/login data
-        //return to login page
-        loginScreen()
+        //call to API
+        val volleyQueue = Volley.newRequestQueue(this)
+        val stringRequest: StringRequest = object : StringRequest(
+            Method.POST, url,
+            {
+                val resp_json = JSONObject(it.toString())
+                //wipe data and go to login screen
+                if (resp_json.get("status")=="SUCCESS"){
+                    val edit = preferences.edit()
+                    edit.clear()
+                    edit.apply()
+                    loginScreen()
+                //show the error to the user
+                }else {
+                    Toast.makeText(this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
+                }
+            },
+            {})
+        {
+            override fun getBodyContentType(): String {
+                return "application/x-www-form-urlencoded"
+            }
+            override fun getParams(): MutableMap<String, String> {
+                val params: MutableMap<String, String> = HashMap()
+                params["action"] = "LOGOUT"
+                params["username"] = username
+                params["session_key"] = token
+                return params
+            }
+        }
+        volleyQueue.add(stringRequest)
     }
 
 

@@ -11,19 +11,19 @@
 
 
             <item
-                android:id="@+id/create"
+                android:id="@+id/action_create"
                 android:title="Create Group" />
             <item
-                android:id="@+id/join"
+                android:id="@+id/action_join"
                 android:title="Join Group" />
             <item
-                android:id="@+id/leave"
+                android:id="@+id/action_leave"
                 android:title="Leave Group" />
         </menu>
     </item>
         />
     <item
-        android:id="@+id/logout"
+        android:id="@+id/action_logout"
         android:enabled="true"
         android:title="Logout"
         android:visible="true"
