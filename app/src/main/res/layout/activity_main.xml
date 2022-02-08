@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:textAlignment="center"
     tools:context=".MainActivity">
 
     <androidx.fragment.app.FragmentContainerView
@@ -31,17 +32,17 @@
 
     <TextView
         android:id="@+id/textViewCurrentGroup"
-        android:layout_width="318dp"
-        android:layout_height="39dp"
+        android:layout_width="292dp"
+        android:layout_height="33dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
-        android:background="#3103DAC5"
+        android:background="#1203DAC5"
+        android:shadowColor="@color/teal_700"
         android:text="@string/group"
+        android:textAlignment="center"
         android:textSize="20sp"
         android:textStyle="bold"
         android:visibility="gone"
-        app:layout_constraintEnd_toStartOf="@+id/floatingCloseButton"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

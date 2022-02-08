@@ -46,10 +46,13 @@ class MainActivity : AppCompatActivity(), loginInterface {
         current_group = findViewById(R.id.textViewCurrentGroup)
         close_group_button = findViewById(R.id.floatingCloseButton)
 
-        Log.d("token", token)
-
         if(token=="null"){
-            loginScreen()
+            loginFragment = LoginFragment()
+            supportFragmentManager.beginTransaction()
+                .add(R.id.fragmentContainerView, loginFragment)
+                .commit()
+            MAP = false
+            invalidateOptionsMenu()
         } else {
             //mapFragment
             mapFragment = MapsFragment()
@@ -85,11 +88,10 @@ class MainActivity : AppCompatActivity(), loginInterface {
             logout()
             true
         }
-
         R.id.action_create -> {
+            createGroup()
             true
         }
-
         else -> {
             false
         }
@@ -118,16 +120,18 @@ class MainActivity : AppCompatActivity(), loginInterface {
         if (group_id!="null"){
             current_group.text=group_id
             current_group.visibility = View.VISIBLE
-            close_group_button.visibility = View.VISIBLE
+            //close_group_button.visibility = View.VISIBLE
         }
     }
 
     fun loginScreen(){
         loginFragment = LoginFragment()
         supportFragmentManager.beginTransaction()
-            .add(R.id.fragmentContainerView, loginFragment)
+            .replace(R.id.fragmentContainerView, loginFragment)
             .commit()
         MAP = false
+        current_group.visibility = View.GONE
+        close_group_button.visibility = View.GONE
         invalidateOptionsMenu()
     }
 
@@ -163,6 +167,18 @@ class MainActivity : AppCompatActivity(), loginInterface {
             }
         }
         volleyQueue.add(stringRequest)
+    }
+
+    fun createGroup(){
+        //popup with
+        //call to create
+            //if successful, show close button and save group info to preferences. Start service
+
+    }
+
+    fun closeGroup(){
+        //verify user wants to close
+        //call to close
     }
 
 
