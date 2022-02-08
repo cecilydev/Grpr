@@ -7,6 +7,13 @@ import android.os.IBinder
 class MyLocationService : Service() {
 
     override fun onBind(intent: Intent): IBinder {
-        TODO("Return the communication channel to the service.")
+        //create notficiation for foreground service
+
+        //set up handler that communicates location
+            //create VM with LatLng?
+
+
+        //"Return the communication channel to the service."
+
     }
 }
