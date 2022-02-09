@@ -36,7 +36,7 @@ class MapsFragment : Fragment() {
         googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
         val phl = LatLng(39.9, -75.2)
-        val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false))
+        val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(phl))
 
        var FIRST = true

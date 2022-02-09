@@ -1,14 +1,8 @@
 package edu.temple. grpr
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
-import android.content.SharedPreferences
+import android.content.*
 import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -20,26 +14,23 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import edu.temple.grpr.*
 import edu.temple.grpr.LoginFragment.*
 import org.json.JSONObject
-import java.util.function.Consumer
 
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
 private const val GROUP_ID = "group_id"
+private const val acct_url = "https://kamorris.com/lab/grpr/account.php"
+private const val grp_url="https://kamorris.com/lab/grpr/group.php"
+
 
 class MainActivity : AppCompatActivity(), loginInterface {
-
-    val locationManager : LocationManager by lazy {
-        getSystemService(LocationManager::class.java)
-    }
 
     var isConnected = false
     lateinit var locationBinder: LocationService.LocationBinder
@@ -51,9 +42,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
     lateinit var close_group_button: FloatingActionButton
 
     lateinit var group_id: String
-    lateinit var token: String
+    lateinit var session: String
     lateinit var username: String
-    val url = "https://kamorris.com/lab/grpr/account.php"
+
     var MAP = true
 
     private val locationViewModel : LocationViewModel by lazy {
@@ -84,7 +75,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
         setContentView(R.layout.activity_main)
 
         preferences = getPreferences(MODE_PRIVATE)
-        token= preferences.getString(SESSION_KEY, null).toString()
+        session= preferences.getString(SESSION_KEY, null).toString()
         username= preferences.getString(USERNAME, null).toString()
         group_id= preferences.getString(GROUP_ID, null).toString()
 
@@ -97,7 +88,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
             closeGroup()
         }
 
-        if(token=="null"){
+        if(session=="null"){
             loginFragment = LoginFragment()
             supportFragmentManager.beginTransaction()
                 .add(R.id.fragmentContainerView, loginFragment)
@@ -113,11 +104,13 @@ class MainActivity : AppCompatActivity(), loginInterface {
                 .add(R.id.fragmentContainerView, mapFragment)
                 .commit()
             if (group_id!="null"){
-                current_group.text=group_id
+                current_group.text=getString(R.string.current_group, group_id)
                 current_group.visibility = View.VISIBLE
                 close_group_button.visibility = View.VISIBLE
             }
         }
+
+
 
 
     }
@@ -152,8 +145,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
     override fun updateData(username: String, session_key: String) {
         this.username= username
-        token = session_key
-        Log.d("new token", token.toString())
+        session = session_key
         val edit = preferences.edit()
         edit.putString(SESSION_KEY, session_key)
         edit.putString(USERNAME, username)
@@ -174,9 +166,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
         invalidateOptionsMenu()
 
         if (group_id!="null"){
-            current_group.text=group_id
+            current_group.text=getString(R.string.current_group, group_id)
             current_group.visibility = View.VISIBLE
-            //close_group_button.visibility = View.VISIBLE
+            close_group_button.visibility = View.VISIBLE
         }
     }
 
@@ -193,58 +185,63 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
     fun logout() {
         //call to API
-        val volleyQueue = Volley.newRequestQueue(this)
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, url,
-            {
-                val resp_json = JSONObject(it.toString())
-                //wipe data and go to login screen
-                if (resp_json.get("status")=="SUCCESS"){
-                    val edit = preferences.edit()
-                    edit.clear()
-                    edit.apply()
-                    loginScreen()
+        val params: MutableMap<String, String> = HashMap()
+        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
+            //wipe data and go to login screen
+            if (resp_json.get("status") == "SUCCESS") {
+                val edit = preferences.edit()
+                edit.clear()
+                edit.apply()
+                loginScreen()
                 //show the error to the user
-                }else {
-                    Toast.makeText(this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
-                }
-            },
-            {})
-        {
-            override fun getBodyContentType(): String {
-                return "application/x-www-form-urlencoded"
-            }
-            override fun getParams(): MutableMap<String, String> {
-                val params: MutableMap<String, String> = HashMap()
-                params["action"] = "LOGOUT"
-                params["username"] = username
-                params["session_key"] = token
-                return params
+            } else {
+                Toast.makeText(
+                    this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
             }
         }
-        volleyQueue.add(stringRequest)
+
+        params["action"] = "LOGOUT"
+        params["username"] = username
+        params["session_key"] = session
+
+        volleyRequest(acct_url, params, resp)
     }
 
     fun createGroup(){
-        bindService(
-            Intent(this, LocationService::class.java)
-            , serviceConnection
-            , BIND_AUTO_CREATE
-        )
-        group_id = "NEW GROUP"
-        close_group_button.visibility = View.VISIBLE
-        current_group.text=group_id
-        current_group.visibility = View.VISIBLE
-        //popup with
-        //call to create
-            //if successful, show close button and save group info to preferences. Start service
+        val params: MutableMap<String, String> = HashMap()
+        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
+            //wipe data and go to login screen
+            if (resp_json.get("status") == "SUCCESS") {
+                val edit = preferences.edit()
+                edit.putString("group_id", resp_json.getString("group_id"))
+                edit.apply()
+                group_id=resp_json.getString("group_id")
+                close_group_button.visibility = View.VISIBLE
+                current_group.text=getString(R.string.current_group, group_id)
+                current_group.visibility = View.VISIBLE
+                createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
+                bindService(
+                    Intent(this, LocationService::class.java)
+                    , serviceConnection
+                    , BIND_AUTO_CREATE
+                )
+                //show the error to the user
+            } else {
+                Toast.makeText(
+                    this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
+            }
+        }
+        params["action"] = "CREATE"
+        params["username"] = username
+        params["session_key"] = session
+
+        volleyRequest(grp_url, params, resp)
 
     }
 
     fun closeGroup(){
         //verify user wants to close
-        //call to close
-        unbindService(serviceConnection)
+        createDialog("CLOSE GROUP", "Are you sure you want to close this group?", "close").show()
     }
 
 
@@ -266,6 +263,78 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
     }
 
+    fun createDialog(title: String, message: String, type: String) : AlertDialog {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title).setMessage(message)
+        if (type.equals("create")){
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+            }
+        }
+        if (type.equals("close")) {
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        // User clicked OK button
+                        val params: MutableMap<String, String> = HashMap()
+                        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
+                            //wipe data and go to login screen
+                            if (resp_json.get("status") == "SUCCESS") {
+                                val edit = preferences.edit()
+                                edit.remove("group_id")
+                                edit.apply()
+                                unbindService(serviceConnection)
+                                group_id="null"
+                                current_group.text=""
+                                current_group.visibility = View.GONE
+                                close_group_button.visibility = View.GONE
+                                //show the error to the user
+                            } else {
+                                Toast.makeText(this.context, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
+                            }
+                        }
 
+                        params["action"] = "CLOSE"
+                        params["username"] = username
+                        params["session_key"] = session
+                        params["convoy_id"]=group_id
+                        volleyRequest(grp_url, params, resp)
+                        dialog.dismiss()
+
+
+                    })
+                setNegativeButton(R.string.cancel,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+            }
+            }
+
+        return builder.create()
+    }
+
+
+    fun volleyRequest(url:String, params: MutableMap<String, String>, onResult: (result: JSONObject) -> Unit ){
+        val volleyQueue = Volley.newRequestQueue(this)
+        val stringRequest: StringRequest = object : StringRequest(
+            Method.POST, url,
+            {
+                val resp_json = JSONObject(it)
+                onResult(resp_json)
+            },
+            {})
+        {
+            override fun getBodyContentType(): String {
+                return "application/x-www-form-urlencoded"
+            }
+            override fun getParams(): MutableMap<String, String> {
+                return params
+            }
+        }
+        volleyQueue.add(stringRequest)
+    }
 
 }

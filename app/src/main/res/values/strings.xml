@@ -7,6 +7,9 @@
     <string name="group">Group </string>
     <string name="error">Error: %1$s</string>
     <string name="current_group">Group ID: %1$s</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
     <string name="notification_title">Grpr Location</string>
     <string name="notification_message">You are currently sharing your location. Close or leave your current group to stop.</string>
+    <string name="new_group">You have created a group with Group ID: %1$s</string>
 </resources>
