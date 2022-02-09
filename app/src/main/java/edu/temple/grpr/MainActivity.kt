@@ -79,8 +79,6 @@ class MainActivity : AppCompatActivity(), loginInterface {
         username= preferences.getString(USERNAME, null).toString()
         group_id= preferences.getString(GROUP_ID, null).toString()
 
-        val locationViewModel = ViewModelProvider(this).get(LocationViewModel::class.java)
-
         current_group = findViewById(R.id.textViewCurrentGroup)
         close_group_button = findViewById(R.id.floatingCloseButton)
 

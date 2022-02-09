@@ -60,7 +60,6 @@ class LocationService : Service() {
 
 
         //set up location stuff
-        //val locationManager = getSystemService(LocationManager::class.java)
         locationListener = LocationListener{
             if (previousLocation!=null){
                 //if
