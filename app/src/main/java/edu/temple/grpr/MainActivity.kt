@@ -1,6 +1,11 @@
 package edu.temple. grpr
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -9,18 +14,28 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.MapFragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import edu.temple.grpr.LocationViewModel
+import edu.temple.grpr.LoginFragment
 import edu.temple.grpr.LoginFragment.*
+import edu.temple.grpr.MapsFragment
+import edu.temple.grpr.R
 import org.json.JSONObject
+import java.util.function.Consumer
 
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
 private const val GROUP_ID = "group_id"
 
 class MainActivity : AppCompatActivity(), loginInterface {
+
+    val locationManager : LocationManager by lazy {
+        getSystemService(LocationManager::class.java)
+    }
 
     private lateinit var loginFragment : LoginFragment
     private lateinit var mapFragment: MapsFragment
@@ -44,6 +59,8 @@ class MainActivity : AppCompatActivity(), loginInterface {
         username= preferences.getString(USERNAME, null).toString()
         group_id= preferences.getString(GROUP_ID, null).toString()
 
+        val locationViewModel = ViewModelProvider(this).get(LocationViewModel::class.java)
+
         current_group = findViewById(R.id.textViewCurrentGroup)
         close_group_button = findViewById(R.id.floatingCloseButton)
 
@@ -55,6 +72,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
             MAP = false
             invalidateOptionsMenu()
         } else {
+          /*  if (!permissionGranted()) {
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
+            }*/
             //mapFragment
             mapFragment = MapsFragment()
             supportFragmentManager.beginTransaction()
@@ -110,6 +130,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
 
     override fun loginSuccessful() {
+        /*if (!permissionGranted()) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
+        }*/
         //switch fragment to map
         mapFragment = MapsFragment()
         supportFragmentManager.beginTransaction()
@@ -181,6 +204,26 @@ class MainActivity : AppCompatActivity(), loginInterface {
         //verify user wants to close
         //call to close
     }
+
+
+    /*private fun permissionGranted () : Boolean {
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 123) {
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                finish()
+            }
+        }
+
+    }*/
+
 
 
 }

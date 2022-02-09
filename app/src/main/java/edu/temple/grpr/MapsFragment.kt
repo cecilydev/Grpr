@@ -1,11 +1,15 @@
 package edu.temple.grpr
 
+import android.location.LocationManager
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat.getSystemServiceName
+import androidx.lifecycle.ViewModelProvider
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -28,8 +32,17 @@ class MapsFragment : Fragment() {
          */
         /*val sydney = LatLng(-34.0, 151.0)
         googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))*/
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
+        val marker = googleMap.addMarker(MarkerOptions())
+        ViewModelProvider(requireActivity())
+            .get(LocationViewModel::class.java)
+            .getLatLng()
+            .observe(requireActivity()) {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 16f))
+                marker?.position = it
+            }
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,6 +57,8 @@ class MapsFragment : Fragment() {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
 
-        
+
     }
+
+
 }
