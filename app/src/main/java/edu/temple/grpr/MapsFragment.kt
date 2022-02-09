@@ -33,13 +33,14 @@ class MapsFragment : Fragment() {
         /*val sydney = LatLng(-34.0, 151.0)
         googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
-        val marker = googleMap.addMarker(MarkerOptions())
+        //val marker = googleMap.addMarker(MarkerOptions())
+
         ViewModelProvider(requireActivity())
             .get(LocationViewModel::class.java)
             .getLatLng()
             .observe(requireActivity()) {
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 16f))
-                marker?.position = it
+                //marker?.position = it
             }
     }
 

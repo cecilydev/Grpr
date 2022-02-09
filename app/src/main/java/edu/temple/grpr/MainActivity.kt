@@ -2,12 +2,18 @@ package edu.temple. grpr
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -18,12 +24,10 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.MapFragment
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import edu.temple.grpr.LocationViewModel
-import edu.temple.grpr.LoginFragment
+import edu.temple.grpr.*
 import edu.temple.grpr.LoginFragment.*
-import edu.temple.grpr.MapsFragment
-import edu.temple.grpr.R
 import org.json.JSONObject
 import java.util.function.Consumer
 
@@ -37,6 +41,8 @@ class MainActivity : AppCompatActivity(), loginInterface {
         getSystemService(LocationManager::class.java)
     }
 
+    var isConnected = false
+    lateinit var locationBinder: LocationService.LocationBinder
     private lateinit var loginFragment : LoginFragment
     private lateinit var mapFragment: MapsFragment
     private lateinit var preferences: SharedPreferences
@@ -49,6 +55,29 @@ class MainActivity : AppCompatActivity(), loginInterface {
     lateinit var username: String
     val url = "https://kamorris.com/lab/grpr/account.php"
     var MAP = true
+
+    private val locationViewModel : LocationViewModel by lazy {
+        ViewModelProvider(this).get(LocationViewModel::class.java)
+    }
+
+    val locationHandler = Handler(Looper.getMainLooper()) {
+        if (it.obj != null) {
+            locationViewModel.setLatLng(it.obj as LatLng)
+        }
+        true
+    }
+
+
+    val serviceConnection = object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            isConnected = true
+            locationBinder = service as LocationService.LocationBinder
+            locationBinder.setHandler(locationHandler)
+        }
+        override fun onServiceDisconnected(name: ComponentName?) {
+            isConnected = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +93,10 @@ class MainActivity : AppCompatActivity(), loginInterface {
         current_group = findViewById(R.id.textViewCurrentGroup)
         close_group_button = findViewById(R.id.floatingCloseButton)
 
+        close_group_button.setOnClickListener {
+            closeGroup()
+        }
+
         if(token=="null"){
             loginFragment = LoginFragment()
             supportFragmentManager.beginTransaction()
@@ -72,10 +105,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
             MAP = false
             invalidateOptionsMenu()
         } else {
-          /*  if (!permissionGranted()) {
+            if (!permissionGranted()) {
                 requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
-            }*/
-            //mapFragment
+            } //mapFragment
             mapFragment = MapsFragment()
             supportFragmentManager.beginTransaction()
                 .add(R.id.fragmentContainerView, mapFragment)
@@ -130,9 +162,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
 
     override fun loginSuccessful() {
-        /*if (!permissionGranted()) {
+        if (!permissionGranted()) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
-        }*/
+        }
         //switch fragment to map
         mapFragment = MapsFragment()
         supportFragmentManager.beginTransaction()
@@ -194,6 +226,15 @@ class MainActivity : AppCompatActivity(), loginInterface {
     }
 
     fun createGroup(){
+        bindService(
+            Intent(this, LocationService::class.java)
+            , serviceConnection
+            , BIND_AUTO_CREATE
+        )
+        group_id = "NEW GROUP"
+        close_group_button.visibility = View.VISIBLE
+        current_group.text=group_id
+        current_group.visibility = View.VISIBLE
         //popup with
         //call to create
             //if successful, show close button and save group info to preferences. Start service
@@ -203,10 +244,11 @@ class MainActivity : AppCompatActivity(), loginInterface {
     fun closeGroup(){
         //verify user wants to close
         //call to close
+        unbindService(serviceConnection)
     }
 
 
-    /*private fun permissionGranted () : Boolean {
+    private fun permissionGranted () : Boolean {
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -222,7 +264,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
             }
         }
 
-    }*/
+    }
 
 
 

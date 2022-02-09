@@ -1,7 +1,10 @@
 package edu.temple.grpr
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,6 +15,7 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.Handler
 import android.os.Message
+import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 
 const val ONGOING_NOTIFICATION_ID = 1
@@ -31,8 +35,15 @@ class LocationService : Service() {
     }
 
 
+    @SuppressLint("MissingPermission")
     override fun onCreate() {
         super.onCreate()
+
+        val channel = NotificationChannel("Location_ID", "Location Channel", NotificationManager.IMPORTANCE_DEFAULT)
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+
+
         val notification: Notification = Notification.Builder(this, "Location_ID")
             .setContentTitle(getText(R.string.notification_title))
             .setContentText(getText(R.string.notification_message))
@@ -43,15 +54,17 @@ class LocationService : Service() {
 
 
         //set up location stuff
-        val locationmanager = getSystemService(LocationManager::class.java)
+        val locationManager = getSystemService(LocationManager::class.java)
         val locationListener = LocationListener{
             if (previousLocation!=null){
                 //if
                 if (it.distanceTo(previousLocation) - 5 >= 0) {
                     //update handler
-                    var message = Message.obtain()
+                    val message = Message.obtain()
                     message.obj = LatLng(it.latitude, it.longitude)
                     locationHandler.sendMessage(message)
+
+                    Log.d("Location", it.toString())
 
                     //update prev location
                     previousLocation=it
@@ -59,12 +72,13 @@ class LocationService : Service() {
             } else {
                 previousLocation = it
             }
-
         }
 
-        
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000.toLong(), 5f, locationListener)
+
 
     }
+
 
 
 }
