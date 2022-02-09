@@ -64,17 +64,19 @@ class LocationService : Service() {
                     message.obj = LatLng(it.latitude, it.longitude)
                     locationHandler.sendMessage(message)
 
-                    Log.d("Location", it.toString())
-
                     //update prev location
                     previousLocation=it
                 }
             } else {
+                val message = Message.obtain()
+                message.obj = LatLng(it.latitude, it.longitude)
+                locationHandler.sendMessage(message)
+
                 previousLocation = it
             }
         }
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000.toLong(), 5f, locationListener)
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5f, locationListener)
 
 
     }

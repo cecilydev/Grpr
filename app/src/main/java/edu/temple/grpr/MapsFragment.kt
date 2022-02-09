@@ -15,7 +15,9 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
 class MapsFragment : Fragment() {
@@ -33,14 +35,23 @@ class MapsFragment : Fragment() {
         /*val sydney = LatLng(-34.0, 151.0)
         googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
-        //val marker = googleMap.addMarker(MarkerOptions())
+        val phl = LatLng(39.9, -75.2)
+        val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng(phl))
 
+       var FIRST = true
         ViewModelProvider(requireActivity())
             .get(LocationViewModel::class.java)
             .getLatLng()
             .observe(requireActivity()) {
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 16f))
-                //marker?.position = it
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
+                if (FIRST){
+                    marker?.position = it
+                    marker?.isVisible = true
+                    FIRST = false
+                } else {
+                    marker?.position=it
+                }
             }
     }
 
