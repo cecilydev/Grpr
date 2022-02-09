@@ -36,7 +36,7 @@
         android:layout_height="33dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
-        android:background="#1203DAC5"
+        android:background="#A403DAC5"
         android:shadowColor="@color/teal_700"
         android:text="@string/group"
         android:textAlignment="center"

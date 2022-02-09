@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteAbortException
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -22,7 +23,12 @@ const val ONGOING_NOTIFICATION_ID = 1
 
 class LocationService : Service() {
     lateinit var locationHandler : Handler
+    lateinit var locationListener : LocationListener
     var previousLocation : Location? = null
+
+    val locationManager : LocationManager by lazy {
+        getSystemService(LocationManager::class.java)
+    }
 
     inner class LocationBinder: Binder() {
         fun setHandler(handler: Handler){
@@ -54,8 +60,8 @@ class LocationService : Service() {
 
 
         //set up location stuff
-        val locationManager = getSystemService(LocationManager::class.java)
-        val locationListener = LocationListener{
+        //val locationManager = getSystemService(LocationManager::class.java)
+        locationListener = LocationListener{
             if (previousLocation!=null){
                 //if
                 if (it.distanceTo(previousLocation) - 5 >= 0) {
@@ -81,6 +87,10 @@ class LocationService : Service() {
 
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        locationManager.removeUpdates(locationListener)
+        return super.onUnbind(intent)
+    }
 
 
 }
