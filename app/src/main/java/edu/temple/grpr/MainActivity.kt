@@ -15,6 +15,7 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
@@ -85,6 +86,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
         close_group_button.setOnClickListener {
             closeGroup()
         }
+
 
         if(session=="null"){
             loginFragment = LoginFragment()
@@ -298,7 +300,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
                         params["action"] = "CLOSE"
                         params["username"] = username
                         params["session_key"] = session
-                        params["convoy_id"]=group_id
+                        params["group_id"]=group_id
                         volleyRequest(grp_url, params, resp)
                         dialog.dismiss()
 

@@ -2,10 +2,7 @@ package edu.temple.grpr
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteAbortException
@@ -22,8 +19,8 @@ import com.google.android.gms.maps.model.LatLng
 const val ONGOING_NOTIFICATION_ID = 1
 
 class LocationService : Service() {
-    lateinit var locationHandler : Handler
     lateinit var locationListener : LocationListener
+    var locationHandler : Handler? = null
     var previousLocation : Location? = null
 
     val locationManager : LocationManager by lazy {
@@ -67,7 +64,7 @@ class LocationService : Service() {
                     //update handler
                     val message = Message.obtain()
                     message.obj = LatLng(it.latitude, it.longitude)
-                    locationHandler.sendMessage(message)
+                    locationHandler?.sendMessage(message)
 
                     //update prev location
                     previousLocation=it
@@ -75,8 +72,7 @@ class LocationService : Service() {
             } else {
                 val message = Message.obtain()
                 message.obj = LatLng(it.latitude, it.longitude)
-                locationHandler.sendMessage(message)
-
+                locationHandler?.sendMessage(message)
                 previousLocation = it
             }
         }
@@ -87,8 +83,13 @@ class LocationService : Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        locationManager.removeUpdates(locationListener)
+        locationHandler=null
         return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        locationManager.removeUpdates(locationListener)
+        super.onDestroy()
     }
 
 
