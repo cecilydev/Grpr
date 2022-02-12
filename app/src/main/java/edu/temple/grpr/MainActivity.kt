@@ -27,6 +27,8 @@ import org.json.JSONObject
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
 private const val GROUP_ID = "group_id"
+private const val NEW_INSTANCE=0
+private const val SAVED_INSTANCE=1
 private const val acct_url = "https://kamorris.com/lab/grpr/account.php"
 private const val grp_url="https://kamorris.com/lab/grpr/group.php"
 
@@ -89,29 +91,12 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
 
         if(session=="null"){
-            loginFragment = LoginFragment()
-            supportFragmentManager.beginTransaction()
-                .add(R.id.fragmentContainerView, loginFragment)
-                .commit()
-            MAP = false
-            invalidateOptionsMenu()
+            if (savedInstanceState==null) loginScreen(NEW_INSTANCE)
+            else loginScreen(SAVED_INSTANCE)
         } else {
-            if (!permissionGranted()) {
-                requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
-            } //mapFragment
-            mapFragment = MapsFragment()
-            supportFragmentManager.beginTransaction()
-                .add(R.id.fragmentContainerView, mapFragment)
-                .commit()
-            if (group_id!="null"){
-                current_group.text=getString(R.string.current_group, group_id)
-                current_group.visibility = View.VISIBLE
-                close_group_button.visibility = View.VISIBLE
-            }
+            if (savedInstanceState==null) mapScreen(NEW_INSTANCE)
+            else mapScreen(SAVED_INSTANCE)
         }
-
-
-
 
     }
 
@@ -154,26 +139,24 @@ class MainActivity : AppCompatActivity(), loginInterface {
 
 
     override fun loginSuccessful() {
-        if (!permissionGranted()) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
-        }
-        //switch fragment to map
-        mapFragment = MapsFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainerView, mapFragment)
-            .commit()
+        mapScreen(SAVED_INSTANCE)
         MAP = true
         invalidateOptionsMenu()
-
-        if (group_id!="null"){
-            current_group.text=getString(R.string.current_group, group_id)
-            current_group.visibility = View.VISIBLE
-            close_group_button.visibility = View.VISIBLE
-        }
     }
 
-    fun loginScreen(){
+
+    fun loginScreen(Instance: Int){
         loginFragment = LoginFragment()
+        if (Instance== NEW_INSTANCE){
+            supportFragmentManager.beginTransaction()
+                .add(R.id.fragmentContainerView, loginFragment)
+                .commit()
+        } else {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainerView, loginFragment)
+                .commit()
+        }
+
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainerView, loginFragment)
             .commit()
@@ -181,6 +164,28 @@ class MainActivity : AppCompatActivity(), loginInterface {
         current_group.visibility = View.GONE
         close_group_button.visibility = View.GONE
         invalidateOptionsMenu()
+    }
+
+    fun mapScreen(Instance: Int){
+        if (!permissionGranted()) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
+        } //mapFragment
+        mapFragment = MapsFragment()
+        if (Instance== NEW_INSTANCE) {
+            supportFragmentManager.beginTransaction()
+                .add(R.id.fragmentContainerView, mapFragment)
+                .commit()
+        } else {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainerView, mapFragment)
+                .commit()
+        }
+        if (group_id!="null"){
+            current_group.text=getString(R.string.current_group, group_id)
+            current_group.visibility = View.VISIBLE
+            close_group_button.visibility = View.VISIBLE
+        }
+
     }
 
     fun logout() {
@@ -192,7 +197,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
                 val edit = preferences.edit()
                 edit.clear()
                 edit.apply()
-                loginScreen()
+                loginScreen(SAVED_INSTANCE)
                 //show the error to the user
             } else {
                 Toast.makeText(
