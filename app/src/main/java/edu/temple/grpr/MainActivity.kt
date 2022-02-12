@@ -1,6 +1,7 @@
 package edu.temple. grpr
 
 import android.Manifest
+import android.R.drawable.ic_menu_close_clear_cancel
 import android.content.*
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
@@ -8,14 +9,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
@@ -42,7 +41,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
     private lateinit var preferences: SharedPreferences
 
     lateinit var current_group: TextView
-    lateinit var close_group_button: FloatingActionButton
+    lateinit var create_close_group_button: FloatingActionButton
 
     lateinit var group_id: String
     lateinit var session: String
@@ -83,10 +82,12 @@ class MainActivity : AppCompatActivity(), loginInterface {
         group_id= preferences.getString(GROUP_ID, null).toString()
 
         current_group = findViewById(R.id.textViewCurrentGroup)
-        close_group_button = findViewById(R.id.floatingCloseButton)
+        create_close_group_button = findViewById(R.id.floatingCreateCloseButton)
 
-        close_group_button.setOnClickListener {
-            closeGroup()
+        create_close_group_button.setOnClickListener {
+            if (create_close_group_button.tag=="close")
+            createDialog("CLOSE GROUP", "Are you sure you want to close this group?", "close").show()
+            else createGroup()
         }
 
 
@@ -101,6 +102,8 @@ class MainActivity : AppCompatActivity(), loginInterface {
     }
 
 
+
+    //menu related stuff
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu, menu)
         return true
@@ -119,18 +122,18 @@ class MainActivity : AppCompatActivity(), loginInterface {
             logout()
             true
         }
-        R.id.action_create -> {
-            createGroup()
-            true
-        }
         else -> {
             false
         }
     }
 
+
+    //login and fragment related stuff
+
     override fun updateData(username: String, session_key: String) {
         this.username= username
         session = session_key
+        //query groups
         val edit = preferences.edit()
         edit.putString(SESSION_KEY, session_key)
         edit.putString(USERNAME, username)
@@ -162,7 +165,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
             .commit()
         MAP = false
         current_group.visibility = View.GONE
-        close_group_button.visibility = View.GONE
+        create_close_group_button.visibility = View.GONE
         invalidateOptionsMenu()
     }
 
@@ -180,13 +183,30 @@ class MainActivity : AppCompatActivity(), loginInterface {
                 .replace(R.id.fragmentContainerView, mapFragment)
                 .commit()
         }
+        create_close_group_button.visibility = View.VISIBLE
         if (group_id!="null"){
             current_group.text=getString(R.string.current_group, group_id)
             current_group.visibility = View.VISIBLE
-            close_group_button.visibility = View.VISIBLE
+            create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
+            create_close_group_button.tag="close"
+            bindService(
+                Intent(this, LocationService::class.java)
+                , serviceConnection
+                , BIND_AUTO_CREATE
+            )
+        }else{
+            if (session!="null"){
+                //query and start service if there
+                queryGroup()
+            }
+
         }
 
     }
+
+
+
+    //API call related stuff
 
     fun logout() {
         //call to API
@@ -212,113 +232,93 @@ class MainActivity : AppCompatActivity(), loginInterface {
         volleyRequest(acct_url, params, resp)
     }
 
+    val respCreate: (JSONObject) -> Unit = {resp_json: JSONObject ->
+        //wipe data and go to login screen
+        if (resp_json.get("status") == "SUCCESS") {
+            val edit = preferences.edit()
+            edit.putString("group_id", resp_json.getString("group_id"))
+            edit.apply()
+            group_id=resp_json.getString("group_id")
+            current_group.text=getString(R.string.current_group, group_id)
+            current_group.visibility = View.VISIBLE
+            create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            create_close_group_button.tag="close"
+            createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
+            bindService(
+                Intent(this, LocationService::class.java)
+                , serviceConnection
+                , BIND_AUTO_CREATE
+            )
+            //show the error to the user
+        } else {
+            Toast.makeText(
+                this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
+        }
+    }
+
     fun createGroup(){
         val params: MutableMap<String, String> = HashMap()
-        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
-            //wipe data and go to login screen
-            if (resp_json.get("status") == "SUCCESS") {
-                val edit = preferences.edit()
-                edit.putString("group_id", resp_json.getString("group_id"))
-                edit.apply()
-                group_id=resp_json.getString("group_id")
-                close_group_button.visibility = View.VISIBLE
-                current_group.text=getString(R.string.current_group, group_id)
-                current_group.visibility = View.VISIBLE
-                createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
-                bindService(
-                    Intent(this, LocationService::class.java)
-                    , serviceConnection
-                    , BIND_AUTO_CREATE
-                )
-                //show the error to the user
-            } else {
-                Toast.makeText(
-                    this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
-            }
-        }
         params["action"] = "CREATE"
         params["username"] = username
         params["session_key"] = session
 
-        volleyRequest(grp_url, params, resp)
+        volleyRequest(grp_url, params, respCreate)
 
+    }
+
+    val respClose: (JSONObject) -> Unit = {resp_json: JSONObject ->
+        //wipe data and go to login screen
+        if (resp_json.get("status") == "SUCCESS") {
+            val edit = preferences.edit()
+            edit.remove("group_id")
+            edit.apply()
+            unbindService(serviceConnection)
+            group_id="null"
+            current_group.text=""
+            current_group.visibility = View.GONE
+            create_close_group_button.setImageResource(android.R.drawable.ic_input_add)
+            create_close_group_button.tag="create"
+            //show the error to the user
+        } else {
+            Toast.makeText(this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun queryGroup(){
+        val params: MutableMap<String, String> = HashMap()
+        params["action"] = "QUERY"
+        params["username"] = username
+        params["session_key"] = session
+        volleyRequest(grp_url, params, respQuery)
+    }
+
+
+    val respQuery: (JSONObject) -> Unit = {resp_json: JSONObject ->
+        //wipe data and go to login screen
+        if (resp_json.get("status") == "SUCCESS") {
+            val edit = preferences.edit()
+            edit.putString("group_id", resp_json.getString("group_id"))
+            edit.apply()
+            group_id=resp_json.getString("group_id")
+            current_group.text=getString(R.string.current_group, group_id)
+            current_group.visibility = View.VISIBLE
+            create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            create_close_group_button.tag="close"
+            bindService(
+                Intent(this, LocationService::class.java)
+                , serviceConnection
+                , BIND_AUTO_CREATE
+            )
+        }
     }
 
     fun closeGroup(){
-        //verify user wants to close
-        createDialog("CLOSE GROUP", "Are you sure you want to close this group?", "close").show()
-    }
-
-
-    private fun permissionGranted () : Boolean {
-        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 123) {
-            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                finish()
-            }
-        }
-
-    }
-
-    fun createDialog(title: String, message: String, type: String) : AlertDialog {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(title).setMessage(message)
-        if (type.equals("create")){
-            builder.apply {
-                setPositiveButton(R.string.ok,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        dialog.dismiss()
-                    })
-            }
-        }
-        if (type.equals("close")) {
-            builder.apply {
-                setPositiveButton(R.string.ok,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        // User clicked OK button
-                        val params: MutableMap<String, String> = HashMap()
-                        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
-                            //wipe data and go to login screen
-                            if (resp_json.get("status") == "SUCCESS") {
-                                val edit = preferences.edit()
-                                edit.remove("group_id")
-                                edit.apply()
-                                unbindService(serviceConnection)
-                                group_id="null"
-                                current_group.text=""
-                                current_group.visibility = View.GONE
-                                close_group_button.visibility = View.GONE
-                                //show the error to the user
-                            } else {
-                                Toast.makeText(this.context, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
-                            }
-                        }
-
-                        params["action"] = "CLOSE"
-                        params["username"] = username
-                        params["session_key"] = session
-                        params["group_id"]=group_id
-                        volleyRequest(grp_url, params, resp)
-                        dialog.dismiss()
-
-
-                    })
-                setNegativeButton(R.string.cancel,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        dialog.dismiss()
-                    })
-            }
-            }
-
-        return builder.create()
+        val params: MutableMap<String, String> = HashMap()
+        params["action"] = "CLOSE"
+        params["username"] = username
+        params["session_key"] = session
+        params["group_id"]=group_id
+        volleyRequest(grp_url, params, respClose)
     }
 
 
@@ -340,6 +340,57 @@ class MainActivity : AppCompatActivity(), loginInterface {
             }
         }
         volleyQueue.add(stringRequest)
+    }
+
+
+    //permissions
+
+    private fun permissionGranted () : Boolean {
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 123) {
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                finish()
+            }
+        }
+
+    }
+
+
+    //dialogs
+
+    fun createDialog(title: String, message: String, type: String) : AlertDialog {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title).setMessage(message)
+        if (type.equals("create")){
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+            }
+        }
+        if (type.equals("close")) {
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        closeGroup()
+                        dialog.dismiss()
+                    })
+                setNegativeButton(R.string.cancel,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+            }
+        }
+        return builder.create()
     }
 
 }
