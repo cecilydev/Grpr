@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -19,14 +20,18 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
 import edu.temple.grpr.LoginFragment.*
 import org.json.JSONObject
+
 
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
 private const val GROUP_ID = "group_id"
-private const val FCM_KEY="fcm_token"
 private const val NEW_INSTANCE=0
 private const val SAVED_INSTANCE=1
 private const val acct_url = "https://kamorris.com/lab/grpr/account.php"
@@ -34,6 +39,7 @@ private const val grp_url="https://kamorris.com/lab/grpr/group.php"
 
 
 class MainActivity : AppCompatActivity(), loginInterface {
+
 
     var isConnected = false
     lateinit var locationBinder: LocationService.LocationBinder
@@ -154,8 +160,13 @@ class MainActivity : AppCompatActivity(), loginInterface {
         mapScreen(SAVED_INSTANCE)
         MAP = true
         invalidateOptionsMenu()
-    }
 
+        FirebaseMessaging.getInstance().token.addOnSuccessListener {
+            //update app server
+            updateFCMToken(it)
+        }
+
+    }
 
     fun loginScreen(Instance: Int){
         loginFragment = LoginFragment()
@@ -237,6 +248,24 @@ class MainActivity : AppCompatActivity(), loginInterface {
         params["action"] = "LOGOUT"
         params["username"] = username
         params["session_key"] = session
+
+        volleyRequest(acct_url, params, resp)
+    }
+
+    fun updateFCMToken(fcm_token: String) {
+        //call to API
+        val params: MutableMap<String, String> = HashMap()
+        val resp: (JSONObject) -> Unit = {resp_json: JSONObject ->
+            //wipe data and go to login screen
+            if (resp_json.get("status") == "SUCCESS") {
+                Log.d("FCM token", "UPDATED")
+            }
+        }
+
+        params["action"] = "UPDATE"
+        params["username"] = username
+        params["session_key"] = session
+        params["fcm_token"]=fcm_token
 
         volleyRequest(acct_url, params, resp)
     }
@@ -339,7 +368,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
                 val resp_json = JSONObject(it)
                 onResult(resp_json)
             },
-            {})
+            {Log.d("Volley", "ERROR")})
         {
             override fun getBodyContentType(): String {
                 return "application/x-www-form-urlencoded"
