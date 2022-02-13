@@ -26,6 +26,7 @@ import org.json.JSONObject
 private const val SESSION_KEY = "session_key"
 private const val USERNAME = "username"
 private const val GROUP_ID = "group_id"
+private const val FCM_KEY="fcm_token"
 private const val NEW_INSTANCE=0
 private const val SAVED_INSTANCE=1
 private const val acct_url = "https://kamorris.com/lab/grpr/account.php"
@@ -76,7 +77,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        preferences = getPreferences(MODE_PRIVATE)
+        preferences = getSharedPreferences("GRPR", MODE_PRIVATE)
         session= preferences.getString(SESSION_KEY, null).toString()
         username= preferences.getString(USERNAME, null).toString()
         group_id= preferences.getString(GROUP_ID, null).toString()
@@ -120,6 +121,14 @@ class MainActivity : AppCompatActivity(), loginInterface {
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         R.id.action_logout -> {
             logout()
+            true
+        }
+        R.id.action_join ->{
+            //joinGroup
+            true
+        }
+        R.id.action_leave -> {
+            //leaveGroup
             true
         }
         else -> {
