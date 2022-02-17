@@ -15,8 +15,6 @@ import org.json.JSONObject
 
 class MessageService : FirebaseMessagingService() {
 
-
-
     override fun onNewToken(p0: String) {
         if (Helper.user.getSessionKey(this)!=null){
             //update FCM if already logged in
