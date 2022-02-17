@@ -31,7 +31,6 @@ class LoginFragment : Fragment() {
     lateinit var message: TextView
     lateinit var error: TextView
 
-    val url = "https://kamorris.com/lab/grpr/account.php"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,45 +77,55 @@ class LoginFragment : Fragment() {
         return layout
     }
 
-
     fun login(){
-        //Volley request
-        val volleyQueue = Volley.newRequestQueue(this.context)
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, url,
-            {
-               val resp_json = JSONObject(it.toString())
-                //save data and open map
-                if (resp_json.get("status")=="SUCCESS"){
-                    (activity as loginInterface).updateData(username.text.toString(), resp_json.getString("session_key"))
+        Helper.api.login(requireContext(), User(username.text.toString(), null, null), password.text.toString(), object: Helper.api.Response {
+            override fun processResponse(response: JSONObject) {
+                if (Helper.api.isSuccess(response)) {
+                    Helper.user.saveSessionData(requireContext(), response.getString("session_key"))
+                    Helper.user.saveUser(requireContext(), User(
+                        username.text.toString(),
+                        null,
+                        null
+                    ))
                     (activity as loginInterface).loginSuccessful()
-                //show the error to the user
-                }else {
-                    error.text = getString((R.string.error), resp_json.get("message"))
+                } else {
+                    error.text = getString((R.string.error), Helper.api.getErrorMessage(response))
                     error.visibility = View.VISIBLE
                 }
-            },
-            {})
-            {
-            override fun getBodyContentType(): String {
-                return "application/x-www-form-urlencoded"
             }
-            override fun getParams(): MutableMap<String, String> {
-                val params: MutableMap<String, String> = HashMap()
-                params["username"] = username.text.toString()
-                params["password"] = password.text.toString()
-                if (REGISTER){
-                    params["action"] = "REGISTER"
-                    params["firstname"] = firstName.text.toString()
-                    params["lastname"] = lastName.text.toString()
-                } else {
-                    params["action"] = "LOGIN"
-                }
-                return params
-            }
-        }
-       volleyQueue.add(stringRequest)
+        } )
     }
+
+
+    fun register() {
+        Helper.api.createAccount(
+            requireContext(),
+            User(username.text.toString(), firstName.text.toString(), lastName.text.toString()),
+            password.text.toString(),
+            object : Helper.api.Response {
+                override fun processResponse(response: JSONObject) {
+                    if (Helper.api.isSuccess(response)) {
+                        Helper.user.saveSessionData(
+                            requireContext(),
+                            response.getString("session_key")
+                        )
+                        Helper.user.saveUser(
+                            requireContext(), User(
+                                username.text.toString(),
+                                firstName.text.toString(),
+                                lastName.text.toString()
+                            )
+                        )
+                        (activity as loginInterface).loginSuccessful()
+                    } else {
+                        error.text =
+                            getString((R.string.error), Helper.api.getErrorMessage(response))
+                        error.visibility = View.VISIBLE
+                    }
+                }
+            })
+    }
+
 
     fun loginCheck(){
         var error = false
@@ -161,13 +170,12 @@ class LoginFragment : Fragment() {
         }
 
         if (!error){
-            login()
+            register()
         }
     }
 
 
     interface loginInterface{
-        fun updateData(username: String, session_key: String)
         fun loginSuccessful()
     }
 

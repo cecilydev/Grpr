@@ -12,56 +12,27 @@ import com.android.volley.toolbox.Volley
 import com.google.firebase.messaging.FirebaseMessagingService
 import org.json.JSONObject
 
-private const val SESSION_KEY = "session_key"
-private const val acct_url = "https://kamorris.com/lab/grpr/account.php"
 
 class MessageService : FirebaseMessagingService() {
 
-    private lateinit var preferences: SharedPreferences
 
 
     override fun onNewToken(p0: String) {
-        preferences = getSharedPreferences("GRPR", MODE_PRIVATE)
-        val session = preferences.getString(SESSION_KEY, null)
-
-        if (session!=null){
+        if (Helper.user.getSessionKey(this)!=null){
             //update FCM if already logged in
-            updateFCMToken(p0)
+            Helper.api.updateFCM(this, Helper.user.get(this), Helper.user.getSessionKey(this)!!, p0,  object: Helper.api.Response {
+                override fun processResponse(response: JSONObject) {
+                    if (Helper.api.isSuccess(response)) {
+                        Log.d("FCM_TOKEN", "updated")
+                    } else {
+                        Log.d("FCM_TOKEN", "not updated with app server")
+                    }
+                }
+            })
         }
         super.onNewToken(p0)
     }
 
-
-
-
-    fun updateFCMToken(fcm_token: String) {
-        preferences = getSharedPreferences("GRPR", MODE_PRIVATE)
-        val volleyQueue = Volley.newRequestQueue(this)
-        val stringRequest: StringRequest = object : StringRequest(
-            Method.POST, acct_url,
-            {
-                val resp_json = JSONObject(it.toString())
-                //save data and open map
-                if (resp_json.get("status")!="SUCCESS"){
-                    Toast.makeText(this, getString((R.string.error), resp_json.get("message")), Toast.LENGTH_LONG).show()
-                }
-            },
-            {})
-        {
-            override fun getBodyContentType(): String {
-                return "application/x-www-form-urlencoded"
-            }
-            override fun getParams(): MutableMap<String, String> {
-                val params: MutableMap<String, String> = HashMap()
-                params["action"]="UPDATE"
-                params["username"]=preferences.getString("username", null).toString()
-                params[SESSION_KEY]=preferences.getString(SESSION_KEY, null).toString()
-                params["fcm_token"]=fcm_token
-                return params
-            }
-        }
-        volleyQueue.add(stringRequest)
-    }
 
 
 }
