@@ -85,13 +85,13 @@ class MainActivity : AppCompatActivity(), loginInterface {
                 Helper.api.createGroup(this, Helper.user.get(this), Helper.user.getSessionKey(this)!!, object: Helper.api.Response {
                     override fun processResponse(response: JSONObject) {
                         if (Helper.api.isSuccess(response)) {
-                            Helper.user.saveGroupId(this@MainActivity, response.getString("group_id"))
-                            //group_id=resp_json.getString("group_id")
-                            current_group.text=getString(R.string.current_group, response.getString("group_id"))
+                            val group=response.getString("group_id")
+                            Helper.user.saveGroupId(this@MainActivity, group)
+                            current_group.text=getString(R.string.current_group, group)
                             current_group.visibility = View.VISIBLE
                             create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
                             create_close_group_button.tag="close"
-                            createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
+                            createDialog("CREATE GROUP", getString(R.string.new_group, group), "create").show()
                             bindService(
                                 Intent(this@MainActivity, LocationService::class.java)
                                 , serviceConnection
@@ -148,6 +148,7 @@ class MainActivity : AppCompatActivity(), loginInterface {
         }
         R.id.action_join ->{
             //joinGroup
+            createDialog("JOIN GROUP", "", "join").show()
             true
         }
         R.id.action_leave -> {
@@ -235,7 +236,6 @@ class MainActivity : AppCompatActivity(), loginInterface {
                     override fun processResponse(response: JSONObject) {
                         if (Helper.api.isSuccess(response)) {
                             Helper.user.saveGroupId(this@MainActivity, response.getString("group_id"))
-                            //group_id=response.getString("group_id")
                             current_group.text=getString(R.string.current_group, response.getString("group_id"))
                             current_group.visibility = View.VISIBLE
                             create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
@@ -316,6 +316,19 @@ class MainActivity : AppCompatActivity(), loginInterface {
                     DialogInterface.OnClickListener { dialog, id ->
                         dialog.dismiss()
                     })
+            }
+        }
+        if (type.equals("join")){
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                       // dialog.dismiss()
+                    })
+                setNegativeButton(R.string.cancel,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+                setView(R.layout.join_dialog)
             }
         }
         return builder.create()
