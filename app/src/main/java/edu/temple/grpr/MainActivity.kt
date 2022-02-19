@@ -2,38 +2,37 @@ package edu.temple. grpr
 
 import android.Manifest
 import android.R.drawable.ic_menu_close_clear_cancel
+import android.app.Activity
+import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingService
 import edu.temple.grpr.LoginFragment.*
+import edu.temple.grpr.joinDialog.*
 import org.json.JSONObject
+import org.w3c.dom.Text
+
 
 private const val NEW_INSTANCE=0
 private const val SAVED_INSTANCE=1
 
-class MainActivity : AppCompatActivity(), loginInterface {
-
+class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     var isConnected = false
     lateinit var locationBinder: LocationService.LocationBinder
     private lateinit var loginFragment : LoginFragment
@@ -87,16 +86,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
                         if (Helper.api.isSuccess(response)) {
                             val group=response.getString("group_id")
                             Helper.user.saveGroupId(this@MainActivity, group)
-                            current_group.text=getString(R.string.current_group, group)
-                            current_group.visibility = View.VISIBLE
                             create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
                             create_close_group_button.tag="close"
-                            createDialog("CREATE GROUP", getString(R.string.new_group, group), "create").show()
-                            bindService(
-                                Intent(this@MainActivity, LocationService::class.java)
-                                , serviceConnection
-                                , BIND_AUTO_CREATE
-                            )
+                            onJoinSuccess(group)
                         } else {
                             Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
                         }
@@ -147,8 +139,8 @@ class MainActivity : AppCompatActivity(), loginInterface {
             true
         }
         R.id.action_join ->{
-            //joinGroup
-            createDialog("JOIN GROUP", "", "join").show()
+            val di = joinDialog()
+            di.show(supportFragmentManager, "join")
             true
         }
         R.id.action_leave -> {
@@ -236,15 +228,9 @@ class MainActivity : AppCompatActivity(), loginInterface {
                     override fun processResponse(response: JSONObject) {
                         if (Helper.api.isSuccess(response)) {
                             Helper.user.saveGroupId(this@MainActivity, response.getString("group_id"))
-                            current_group.text=getString(R.string.current_group, response.getString("group_id"))
-                            current_group.visibility = View.VISIBLE
                             create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
                             create_close_group_button.tag="close"
-                            bindService(
-                                Intent(this@MainActivity, LocationService::class.java)
-                                , serviceConnection
-                                , BIND_AUTO_CREATE
-                            )
+                            onJoinSuccess(response.getString("group_id"))
                         } else {
                             Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
                         }
@@ -253,12 +239,10 @@ class MainActivity : AppCompatActivity(), loginInterface {
             }
 
         }
-
     }
 
 
     //permissions
-
     private fun permissionGranted () : Boolean {
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
@@ -312,26 +296,26 @@ class MainActivity : AppCompatActivity(), loginInterface {
                         })
                         dialog.dismiss()
                     })
-                setNegativeButton(R.string.cancel,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        dialog.dismiss()
-                    })
-            }
-        }
-        if (type.equals("join")){
-            builder.apply {
-                setPositiveButton(R.string.ok,
-                    DialogInterface.OnClickListener { dialog, id ->
-                       // dialog.dismiss()
-                    })
-                setNegativeButton(R.string.cancel,
-                    DialogInterface.OnClickListener { dialog, id ->
-                        dialog.dismiss()
-                    })
-                setView(R.layout.join_dialog)
+                setNegativeButton(R.string.cancel, null)
             }
         }
         return builder.create()
+    }
+
+    override fun onJoinSuccess(group: String) {
+        current_group.text=getString(R.string.current_group, group)
+        current_group.visibility = View.VISIBLE
+        bindService(
+            Intent(this@MainActivity, LocationService::class.java)
+            , serviceConnection
+            , BIND_AUTO_CREATE
+        )
+    }
+
+    override fun onJoinFailure(error: String) {
+        Log.d("error in MAIN", error)
+        Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+        //Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
     }
 
 }
