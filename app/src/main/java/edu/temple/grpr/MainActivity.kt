@@ -2,8 +2,6 @@ package edu.temple. grpr
 
 import android.Manifest
 import android.R.drawable.ic_menu_close_clear_cancel
-import android.app.Activity
-import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -12,13 +10,10 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.*
-import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -26,7 +21,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import edu.temple.grpr.LoginFragment.*
 import edu.temple.grpr.joinDialog.*
 import org.json.JSONObject
-import org.w3c.dom.Text
 
 
 private const val NEW_INSTANCE=0
@@ -49,7 +43,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
 
     val locationHandler = Handler(Looper.getMainLooper()) {
         if (it.obj != null) {
-            locationViewModel.setLatLng(it.obj as LatLng)
+            locationViewModel.setMyLatLng(it.obj as LatLng)
         }
         true
     }
@@ -313,9 +307,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     }
 
     override fun onJoinFailure(error: String) {
-        Log.d("error in MAIN", error)
-        Toast.makeText(this, error, Toast.LENGTH_LONG).show()
-        //Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "ERROR: $error", Toast.LENGTH_LONG).show()
     }
 
 }

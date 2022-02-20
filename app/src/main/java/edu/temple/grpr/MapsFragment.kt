@@ -1,14 +1,11 @@
 package edu.temple.grpr
 
-import android.location.LocationManager
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat.getSystemService
-import androidx.core.content.ContextCompat.getSystemServiceName
 import androidx.lifecycle.ViewModelProvider
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -21,6 +18,10 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
 class MapsFragment : Fragment() {
+
+    lateinit var map: GoogleMap
+    var myMarker: Marker? = null
+    var otherMarkers: MutableMap<String, Marker>? = null
 
     private val callback = OnMapReadyCallback { googleMap ->
         /**
@@ -35,24 +36,11 @@ class MapsFragment : Fragment() {
         /*val sydney = LatLng(-34.0, 151.0)
         googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
         googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
+        map = googleMap
         val phl = LatLng(39.9, -75.2)
-        val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(phl))
+        //val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
+        map.moveCamera(CameraUpdateFactory.newLatLng(phl))
 
-       var FIRST = true
-        ViewModelProvider(requireActivity())
-            .get(LocationViewModel::class.java)
-            .getLatLng()
-            .observe(requireActivity()) {
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
-                if (FIRST){
-                    marker?.position = it
-                    marker?.isVisible = true
-                    FIRST = false
-                } else {
-                    marker?.position=it
-                }
-            }
     }
 
 
@@ -69,6 +57,20 @@ class MapsFragment : Fragment() {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
 
+
+        ViewModelProvider(requireActivity())
+            .get(LocationViewModel::class.java)
+            .getMyLatLng()
+            .observe(requireActivity()) {
+                if (myMarker == null) {
+                    myMarker = map.addMarker(
+                        MarkerOptions().position(it).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                    )
+                } else {
+                    myMarker?.position = it
+                }
+                map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
+            }
 
     }
 

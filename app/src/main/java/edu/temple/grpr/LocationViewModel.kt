@@ -6,15 +6,30 @@ import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
 
 class LocationViewModel: ViewModel(){
-    private val latLng: MutableLiveData<LatLng> by lazy {
+
+    private val myLatLng: MutableLiveData<LatLng> by lazy {
         MutableLiveData()
     }
 
-    fun getLatLng(): LiveData<LatLng> {
-        return latLng
+    fun getMyLatLng(): LiveData<LatLng> {
+        return myLatLng
     }
 
-    fun setLatLng(newLatLng: LatLng){
-        this.latLng.value=newLatLng
+    fun setMyLatLng(newLatLng: LatLng){
+        this.myLatLng.value=newLatLng
     }
+
+    private val usersLocations : MutableMap<String, LatLng> by lazy {
+        mutableMapOf()
+    }
+
+    fun getUserLoc(username: String): LatLng? {
+        return this.usersLocations[username]
+    }
+
+    fun setUserLoc(username: String, loc: LatLng){
+        this.usersLocations[username] = loc
+    }
+
+
 }
