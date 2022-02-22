@@ -1,19 +1,25 @@
 package edu.temple.grpr
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import org.json.JSONArray
 import org.json.JSONObject
 
 
 class MessageService : FirebaseMessagingService() {
+
 
     override fun onNewToken(p0: String) {
         if (Helper.user.getSessionKey(this)!=null){
@@ -29,6 +35,25 @@ class MessageService : FirebaseMessagingService() {
             })
         }
         super.onNewToken(p0)
+    }
+
+
+    override fun onMessageReceived(p0: RemoteMessage) {
+        val payload = JSONObject(p0.data["payload"].toString())
+        if (payload.getString("action")=="UPDATE") {
+            val data = payload.getString("data")
+            Log.d("MESSAGE SERVICE: DATA", data.toString())
+            val broadcast = LocalBroadcastManager.getInstance(this)
+            val intent = Intent(Intent.ACTION_ATTACH_DATA)
+            val result = broadcast.sendBroadcast(intent.putExtra("data", payload.getString("data")))
+            Log.d("Broadcast result", result.toString())
+        }
+        /*for (i in 0 until data.length()){
+            val person = data.getJSONObject(i)
+            if (person.getString("username")!=Helper.user.get(this).username)
+                Log.d("PERSON_USER", Helper.user.get(this).toString())
+            Log.d("PERSON_username", person.getString("username"))
+        }*/
     }
 
 

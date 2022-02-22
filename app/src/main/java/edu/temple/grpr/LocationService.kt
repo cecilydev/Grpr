@@ -14,7 +14,10 @@ import android.os.IBinder
 import android.os.Handler
 import android.os.Message
 import android.util.Log
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import com.google.android.gms.maps.model.LatLng
+import org.json.JSONObject
 
 const val ONGOING_NOTIFICATION_ID = 1
 
@@ -53,33 +56,23 @@ class LocationService : Service() {
             .setSmallIcon(R.drawable.ic_location_on)
             .build()
 
-        startForeground(ONGOING_NOTIFICATION_ID, notification)
-
-
         //set up location stuff
         locationListener = LocationListener{
-            if (previousLocation!=null){
-                //if
-                if (it.distanceTo(previousLocation) - 5 >= 0) {
-                    //update handler
+           // if ((previousLocation!=null && it.distanceTo(previousLocation) - 5 >= 0) || previousLocation==null){
                     val message = Message.obtain()
-                    message.obj = LatLng(it.latitude, it.longitude)
+                    val loc = LatLng(it.latitude, it.longitude)
+                    message.obj = loc
                     locationHandler?.sendMessage(message)
 
-                    //update prev location
-                    previousLocation=it
-                }
-            } else {
-                val message = Message.obtain()
-                message.obj = LatLng(it.latitude, it.longitude)
-                locationHandler?.sendMessage(message)
-                previousLocation = it
-            }
+                    if (Helper.user.getSessionKey(this)!=null)
+                        Helper.api.updateLocation(this, Helper.user.get(this), Helper.user.getSessionKey(this)!!, Helper.user.getGroupId(this)!!, loc, null)
+
+                   // previousLocation=it
+               // }
         }
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5f, locationListener)
-
-
+        startForeground(ONGOING_NOTIFICATION_ID, notification)
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 5f, locationListener)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

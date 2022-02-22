@@ -4,6 +4,7 @@ import android.Manifest
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.content.*
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -15,11 +16,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.messaging.FirebaseMessaging
 import edu.temple.grpr.LoginFragment.*
 import edu.temple.grpr.joinDialog.*
+import org.json.JSONArray
 import org.json.JSONObject
 
 
@@ -31,6 +34,18 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     lateinit var locationBinder: LocationService.LocationBinder
     private lateinit var loginFragment : LoginFragment
     private lateinit var mapFragment: MapsFragment
+
+    private val broadcast by lazy {LocalBroadcastManager.getInstance(this)}
+    private val usersLocListener = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            val data = p1?.getStringExtra("data")
+            val dataArray = JSONArray(data)
+            Log.d("BROADCAST", dataArray.toString())
+            for (i in 0 until dataArray.length()){
+                Log.d("BROADCAST DATA", dataArray.get(i).toString())
+            }
+        }
+    }
 
     lateinit var current_group: TextView
     lateinit var create_close_group_button: FloatingActionButton
@@ -67,6 +82,9 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         val session = Helper.user.getSessionKey(this)
         val group_id = Helper.user.getGroupId(this)
         //val username= preferences.getString(USERNAME, null).toString()
+
+        //need to finish
+        broadcast.registerReceiver(usersLocListener, IntentFilter(Intent.ACTION_ATTACH_DATA))
 
         current_group = findViewById(R.id.textViewCurrentGroup)
         create_close_group_button = findViewById(R.id.floatingCreateCloseButton)
@@ -190,9 +208,18 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     }
 
     fun mapScreen(Instance: Int){
-        if (!permissionGranted()) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 123)
-        } //mapFragment
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ), 1
+            )
+        }
+        //mapFragment
         mapFragment = MapsFragment()
         if (Instance== NEW_INSTANCE) {
             supportFragmentManager.beginTransaction()
@@ -206,15 +233,16 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         create_close_group_button.visibility = View.VISIBLE
         val group = Helper.user.getGroupId(this@MainActivity)
         if (group!=null){
-            current_group.text=getString(R.string.current_group, group)
-            current_group.visibility = View.VISIBLE
             create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
             create_close_group_button.tag="close"
+            onJoinSuccess(group)
+            /*current_group.text=getString(R.string.current_group, group)
+            current_group.visibility = View.VISIBLE
             bindService(
                 Intent(this, LocationService::class.java)
                 , serviceConnection
                 , BIND_AUTO_CREATE
-            )
+            )*/
         }else{
             if (Helper.user.getSessionKey(this@MainActivity)!=null){
                 //query and start service if there
@@ -235,11 +263,12 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         }
     }
 
+    //review permissions!!
 
     //permissions
-    private fun permissionGranted () : Boolean {
+    /*private fun permissionGranted () : Boolean {
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
+    }*/
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -247,7 +276,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 123) {
+        if (requestCode == 1) {
             if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 finish()
             }
@@ -278,6 +307,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                                 if (Helper.api.isSuccess(response)) {
                                     Helper.user.clearGroupId(this@MainActivity)
                                     unbindService(serviceConnection)
+                                    stopService(Intent(this@MainActivity, LocationService::class.java))
                                     //group_id="null"
                                     current_group.text=""
                                     current_group.visibility = View.GONE
@@ -304,10 +334,16 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
             , serviceConnection
             , BIND_AUTO_CREATE
         )
+        startService(Intent(this@MainActivity, LocationService::class.java))
     }
+
 
     override fun onJoinFailure(error: String) {
         Toast.makeText(this, "ERROR: $error", Toast.LENGTH_LONG).show()
     }
 
+    override fun onDestroy() {
+        broadcast.unregisterReceiver(usersLocListener)
+        super.onDestroy()
+    }
 }

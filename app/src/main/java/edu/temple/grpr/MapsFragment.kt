@@ -19,7 +19,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 
 class MapsFragment : Fragment() {
 
-    lateinit var map: GoogleMap
+    var map: GoogleMap? = null
     var myMarker: Marker? = null
     var otherMarkers: MutableMap<String, Marker>? = null
 
@@ -39,7 +39,7 @@ class MapsFragment : Fragment() {
         map = googleMap
         val phl = LatLng(39.9, -75.2)
         //val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
-        map.moveCamera(CameraUpdateFactory.newLatLng(phl))
+        map?.moveCamera(CameraUpdateFactory.newLatLng(phl))
 
     }
 
@@ -63,13 +63,13 @@ class MapsFragment : Fragment() {
             .getMyLatLng()
             .observe(requireActivity()) {
                 if (myMarker == null) {
-                    myMarker = map.addMarker(
+                    myMarker = map?.addMarker(
                         MarkerOptions().position(it).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
                     )
                 } else {
                     myMarker?.position = it
                 }
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
+                map?.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
             }
 
     }
