@@ -60,7 +60,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
             val group = p1?.getStringExtra("group_id")
             if (data != "") {
                 val dataArray = JSONArray(data)
-                Log.d("BROADCAST", dataArray.toString())
                 val map = mutableMapOf<String, LatLng>()
                 for (i in 0 until dataArray.length()) {
                     val item = dataArray.get(i) as JSONObject
@@ -81,7 +80,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                     create_close_group_button.tag="create"
                     create_close_group_button.visibility=View.VISIBLE
                 }
-
             }
         }
     }
@@ -108,8 +106,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         preferences = getPreferences(MODE_PRIVATE)
         userCreatedGroup = preferences.getBoolean("USER_CREATED", false)
 
-        Log.d("user create group", userCreatedGroup.toString())
-
         //need to finish
         broadcast.registerReceiver(usersLocListener, IntentFilter(Intent.ACTION_ATTACH_DATA))
 
@@ -129,7 +125,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                             create_close_group_button.tag="close"
                             onJoinSuccess(group)
                             userCreatedGroup=true
-                            createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
+                            createDialog("CREATE GROUP", getString(R.string.new_group, group), "create").show()
                         } else {
                             Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
                         }
@@ -262,56 +258,52 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         }
         create_close_group_button.visibility = View.VISIBLE
 
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            val group = Helper.user.getGroupId(this@MainActivity)
-            if (group != null) {
-                if (userCreatedGroup) {
-                    create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
-                    create_close_group_button.tag = "close"
-                } else {
-                    create_close_group_button.visibility = View.GONE
-                }
-                onJoinSuccess(group)
+        val group = Helper.user.getGroupId(this@MainActivity)
+        if (group != null) {
+            if (userCreatedGroup) {
+                create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
+                create_close_group_button.tag = "close"
             } else {
-                if (Helper.user.getSessionKey(this@MainActivity) != null) {
-                    //query and start service if there
-                    Helper.api.queryStatus(
-                        this,
-                        Helper.user.get(this),
-                        Helper.user.getSessionKey(this)!!,
-                        object : Helper.api.Response {
-                            override fun processResponse(response: JSONObject) {
-                                if (Helper.api.isSuccess(response)) {
-                                    Helper.user.saveGroupId(
-                                        this@MainActivity,
-                                        response.getString("group_id")
-                                    )
-                                    //create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                                    //create_close_group_button.tag="close"
-                                    if (userCreatedGroup) {
-                                        create_close_group_button.setImageResource(
-                                            ic_menu_close_clear_cancel
-                                        )
-                                        create_close_group_button.tag = "close"
-                                    } else {
-                                        create_close_group_button.visibility = View.GONE
-                                    }
-                                    onJoinSuccess(response.getString("group_id"))
-                                } else {
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        Helper.api.getErrorMessage(response),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        })
-                }
-
+                create_close_group_button.visibility = View.GONE
             }
+            onJoinSuccess(group)
+        } else {
+            if (Helper.user.getSessionKey(this@MainActivity) != null) {
+                //query and start service if there
+                Helper.api.queryStatus(
+                    this,
+                    Helper.user.get(this),
+                    Helper.user.getSessionKey(this)!!,
+                    object : Helper.api.Response {
+                        override fun processResponse(response: JSONObject) {
+                            if (Helper.api.isSuccess(response)) {
+                                Helper.user.saveGroupId(
+                                    this@MainActivity,
+                                    response.getString("group_id")
+                                )
+                                //create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+                                //create_close_group_button.tag="close"
+                                if (userCreatedGroup) {
+                                    create_close_group_button.setImageResource(
+                                        ic_menu_close_clear_cancel
+                                    )
+                                    create_close_group_button.tag = "close"
+                                } else {
+                                    create_close_group_button.visibility = View.GONE
+                                }
+                                onJoinSuccess(response.getString("group_id"))
+                            } else {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    Helper.api.getErrorMessage(response),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    })
+            }
+
+
         }
     }
 
@@ -414,7 +406,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
         Helper.user.clearGroupId(this@MainActivity)
         unbindService(serviceConnection)
         stopService(Intent(this@MainActivity, LocationService::class.java))
-        //group_id="null"
         current_group.text=""
         current_group.visibility = View.GONE
         create_close_group_button.setImageResource(android.R.drawable.ic_input_add)
