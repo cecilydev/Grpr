@@ -42,18 +42,13 @@ class MessageService : FirebaseMessagingService() {
         val payload = JSONObject(p0.data["payload"].toString())
         if (payload.getString("action")=="UPDATE") {
             val data = payload.getString("data")
-            Log.d("MESSAGE SERVICE: DATA", data.toString())
             val broadcast = LocalBroadcastManager.getInstance(this)
             val intent = Intent(Intent.ACTION_ATTACH_DATA)
             val result = broadcast.sendBroadcast(intent.putExtra("data", payload.getString("data")))
-            Log.d("Broadcast result", result.toString())
         }
-        /*for (i in 0 until data.length()){
-            val person = data.getJSONObject(i)
-            if (person.getString("username")!=Helper.user.get(this).username)
-                Log.d("PERSON_USER", Helper.user.get(this).toString())
-            Log.d("PERSON_username", person.getString("username"))
-        }*/
+        if (payload.getString("action")=="END"){
+            //handle end here
+        }
     }
 
 

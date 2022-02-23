@@ -91,7 +91,7 @@ class MapsFragment : Fragment() {
                         otherMarkers[key]!!.position = loc
                     }
                     else {
-                        if (key!=username) otherMarkers[key] = map?.addMarker(MarkerOptions().position(loc))!!
+                        if (key!=username) otherMarkers[key] = map?.addMarker(MarkerOptions().position(loc).title(key))!!
                     }
                 }
 
