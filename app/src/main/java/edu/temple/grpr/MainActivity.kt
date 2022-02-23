@@ -72,8 +72,16 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                 }
                 locationViewModel.setUsersLocations(map as Map<String, LatLng>)
             } else {
-                createDialog("CREATOR CLOSED GROUP", getString(R.string.user_closed_group, group), "creator_closed").show()
-                Helper.api.leaveGroup(this@MainActivity, Helper.user.get(this@MainActivity), Helper.user.getSessionKey(this@MainActivity)!!, group!!, null)
+                if (Helper.user.getGroupId(this@MainActivity)==group){
+                    Helper.api.leaveGroup(this@MainActivity, Helper.user.get(this@MainActivity), Helper.user.getSessionKey(this@MainActivity)!!, group!!, null)
+                    createDialog("CREATOR CLOSED GROUP", getString(R.string.user_closed_group, group), "creator_closed").show()
+                    current_group.text=""
+                    current_group.visibility = View.GONE
+                    create_close_group_button.setImageResource(android.R.drawable.ic_input_add)
+                    create_close_group_button.tag="create"
+                    create_close_group_button.visibility=View.VISIBLE
+                }
+
             }
         }
     }
@@ -253,53 +261,63 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                 .commit()
         }
         create_close_group_button.visibility = View.VISIBLE
-        val group = Helper.user.getGroupId(this@MainActivity)
-        if (group!=null){
-           /* if(userCreatedGroup) {
-                create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
-                create_close_group_button.tag = "close"
-            } else{
-                create_close_group_button.visibility = View.GONE
-            }*/
-            if(userCreatedGroup) {
-                create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
-                create_close_group_button.tag = "close"
-            } else{
-                create_close_group_button.visibility = View.GONE
-            }
-            onJoinSuccess(group)
-        }else{
-            if (Helper.user.getSessionKey(this@MainActivity)!=null){
-                //query and start service if there
-                Helper.api.queryStatus(this, Helper.user.get(this), Helper.user.getSessionKey(this)!!,  object: Helper.api.Response {
-                    override fun processResponse(response: JSONObject) {
-                        if (Helper.api.isSuccess(response)) {
-                            Helper.user.saveGroupId(this@MainActivity, response.getString("group_id"))
-                            //create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                            //create_close_group_button.tag="close"
-                            if(userCreatedGroup) {
-                                create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
-                                create_close_group_button.tag = "close"
-                            } else{
-                                create_close_group_button.visibility = View.GONE
-                            }
-                            onJoinSuccess(response.getString("group_id"))
-                        } else {
-                            Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                })
-            }
 
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val group = Helper.user.getGroupId(this@MainActivity)
+            if (group != null) {
+                if (userCreatedGroup) {
+                    create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
+                    create_close_group_button.tag = "close"
+                } else {
+                    create_close_group_button.visibility = View.GONE
+                }
+                onJoinSuccess(group)
+            } else {
+                if (Helper.user.getSessionKey(this@MainActivity) != null) {
+                    //query and start service if there
+                    Helper.api.queryStatus(
+                        this,
+                        Helper.user.get(this),
+                        Helper.user.getSessionKey(this)!!,
+                        object : Helper.api.Response {
+                            override fun processResponse(response: JSONObject) {
+                                if (Helper.api.isSuccess(response)) {
+                                    Helper.user.saveGroupId(
+                                        this@MainActivity,
+                                        response.getString("group_id")
+                                    )
+                                    //create_close_group_button.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+                                    //create_close_group_button.tag="close"
+                                    if (userCreatedGroup) {
+                                        create_close_group_button.setImageResource(
+                                            ic_menu_close_clear_cancel
+                                        )
+                                        create_close_group_button.tag = "close"
+                                    } else {
+                                        create_close_group_button.visibility = View.GONE
+                                    }
+                                    onJoinSuccess(response.getString("group_id"))
+                                } else {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        Helper.api.getErrorMessage(response),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        })
+                }
+
+            }
         }
     }
 
     //review permissions!!
 
     //permissions
-    /*private fun permissionGranted () : Boolean {
-        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }*/
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -356,6 +374,12 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                                 onLeave()
                             } else {
                                 Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
+                                if (Helper.api.getErrorMessage(response)=="Since you created this convoy you must end it to leave"){
+                                    //make close button avail
+                                    create_close_group_button.visibility=View.VISIBLE
+                                    create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
+                                    create_close_group_button.tag = "close"
+                                }
                             }
                         }
                     })

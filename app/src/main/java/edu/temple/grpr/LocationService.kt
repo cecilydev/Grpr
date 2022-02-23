@@ -71,8 +71,16 @@ class LocationService : Service() {
                // }
         }
 
-        startForeground(ONGOING_NOTIFICATION_ID, notification)
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 5f, locationListener)
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            startForeground(ONGOING_NOTIFICATION_ID, notification)
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                0,
+                5f,
+                locationListener
+            )
+        }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
