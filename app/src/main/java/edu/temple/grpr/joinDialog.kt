@@ -5,9 +5,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.util.Log
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import org.json.JSONObject
 
@@ -34,10 +32,11 @@ class joinDialog: DialogFragment() {
             alertDialog.setView(diaView).setTitle("JOIN GROUP")
                 .setPositiveButton(R.string.ok, DialogInterface.OnClickListener{dialog, it ->
                     val group = diaView.findViewById<TextView>(R.id.editTextGroupID).text.toString()
-                    Helper.api.joinGroup(requireContext(), Helper.user.get(requireContext()), Helper.user.getSessionKey(requireContext())!!, group, object: Helper.api.Response {
+                    val context = this.requireContext()
+                    Helper.api.joinGroup(requireContext(), Helper.user.get(context), Helper.user.getSessionKey(context)!!, group, object: Helper.api.Response {
                         override fun processResponse(response: JSONObject) {
                             if (Helper.api.isSuccess(response)) {
-                                Helper.user.saveGroupId(requireContext(), group)
+                                Helper.user.saveGroupId(context, group)
                                 listener.onJoinSuccess(group)
                             } else {
                                 val error = Helper.api.getErrorMessage(response)

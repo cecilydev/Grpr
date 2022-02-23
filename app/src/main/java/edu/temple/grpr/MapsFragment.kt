@@ -3,6 +3,7 @@ package edu.temple.grpr
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,16 +13,15 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 
 class MapsFragment : Fragment() {
 
     var map: GoogleMap? = null
     var myMarker: Marker? = null
-    var otherMarkers: MutableMap<String, Marker>? = null
+    var otherMarkers = mutableMapOf<String, Marker>()
+    var bounds = emptySet<LatLng>()
+    lateinit var username: String
 
     private val callback = OnMapReadyCallback { googleMap ->
         /**
@@ -38,9 +38,7 @@ class MapsFragment : Fragment() {
         googleMap.moveCamera(CameraUpdateFactory.newLatLng())*/
         map = googleMap
         val phl = LatLng(39.9, -75.2)
-        //val marker = googleMap.addMarker(MarkerOptions().position(phl).visible(false).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
         map?.moveCamera(CameraUpdateFactory.newLatLng(phl))
-
     }
 
 
@@ -56,8 +54,9 @@ class MapsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+        username = Helper.user.get(this.requireContext()).username
 
-
+        //viewmodel observer user
         ViewModelProvider(requireActivity())
             .get(LocationViewModel::class.java)
             .getMyLatLng()
@@ -69,10 +68,51 @@ class MapsFragment : Fragment() {
                 } else {
                     myMarker?.position = it
                 }
-                map?.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
+                if (otherMarkers.isEmpty()) map?.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
+            }
+
+        //viewmodel observe others
+        ViewModelProvider(requireActivity())
+            .get(LocationViewModel::class.java)
+            .getUsersLocations()
+            .observe(requireActivity()){
+                val keys = it.keys
+
+                //reset bounds for bounding box
+                bounds = emptySet()
+
+                //for each item in map, update bounds, then if marker exists update location, otherwise add
+                for (i in 0 until keys.size){
+                    val key = keys.elementAt(i).toString()
+                    val loc: LatLng = it[keys.elementAt(i)]!!
+                    bounds= bounds.plus(loc)
+
+                    if (otherMarkers.containsKey(key)) {
+                        otherMarkers[key]!!.position = loc
+                    }
+                    else {
+                        if (key!=username) otherMarkers[key] = map?.addMarker(MarkerOptions().position(loc))!!
+                    }
+                }
+
+                //check if anyone isnt in group anymore, remove from map
+                val removeKeys = (otherMarkers.keys).minus(keys)
+                removeKeys.forEach {
+                   otherMarkers[it]?.remove()
+                   otherMarkers.remove(it)
+                }
+
+                //update map view
+                map?.moveCamera(CameraUpdateFactory.newLatLngBounds(getBounds(), 100))
             }
 
     }
 
-
+    fun getBounds() : LatLngBounds{
+        val builder = LatLngBounds.builder()
+        for (i in bounds.indices){
+            builder.include(bounds.elementAt(i))
+        }
+        return builder.build()
+    }
 }

@@ -4,7 +4,6 @@ import android.Manifest
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.content.*
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -35,18 +34,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     private lateinit var loginFragment : LoginFragment
     private lateinit var mapFragment: MapsFragment
 
-    private val broadcast by lazy {LocalBroadcastManager.getInstance(this)}
-    private val usersLocListener = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-            val data = p1?.getStringExtra("data")
-            val dataArray = JSONArray(data)
-            Log.d("BROADCAST", dataArray.toString())
-            for (i in 0 until dataArray.length()){
-                Log.d("BROADCAST DATA", dataArray.get(i).toString())
-            }
-        }
-    }
-
     lateinit var current_group: TextView
     lateinit var create_close_group_button: FloatingActionButton
 
@@ -61,6 +48,25 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
             locationViewModel.setMyLatLng(it.obj as LatLng)
         }
         true
+    }
+
+    private val broadcast by lazy {LocalBroadcastManager.getInstance(this)}
+    private val usersLocListener = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            val data = p1?.getStringExtra("data")
+            val dataArray = JSONArray(data)
+            Log.d("BROADCAST", dataArray.toString())
+            val map = mutableMapOf<String, LatLng>()
+            for (i in 0 until dataArray.length()){
+                val item = dataArray.get(i) as JSONObject
+                //if (item.getString("username")!=Helper.user.get(this@MainActivity).username){
+                map[item.getString("username")] =
+                    LatLng((item.getString("latitude").toDouble()), item.getString("longitude").toDouble())
+                //}
+            }
+                locationViewModel.setUsersLocations(map as Map<String, LatLng>)
+
+        }
     }
 
 
@@ -81,9 +87,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
 
         val session = Helper.user.getSessionKey(this)
         val group_id = Helper.user.getGroupId(this)
-        //val username= preferences.getString(USERNAME, null).toString()
 
-        //need to finish
         broadcast.registerReceiver(usersLocListener, IntentFilter(Intent.ACTION_ATTACH_DATA))
 
         current_group = findViewById(R.id.textViewCurrentGroup)
@@ -236,13 +240,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
             create_close_group_button.setImageResource(ic_menu_close_clear_cancel)
             create_close_group_button.tag="close"
             onJoinSuccess(group)
-            /*current_group.text=getString(R.string.current_group, group)
-            current_group.visibility = View.VISIBLE
-            bindService(
-                Intent(this, LocationService::class.java)
-                , serviceConnection
-                , BIND_AUTO_CREATE
-            )*/
         }else{
             if (Helper.user.getSessionKey(this@MainActivity)!=null){
                 //query and start service if there

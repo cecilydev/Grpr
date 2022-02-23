@@ -19,17 +19,19 @@ class LocationViewModel: ViewModel(){
         this.myLatLng.value=newLatLng
     }
 
-    private val usersLocations : MutableMap<String, LatLng> by lazy {
-        mutableMapOf()
+
+    private val usersLocations: MutableLiveData< Map<String, LatLng> > by lazy{
+        MutableLiveData()
     }
 
-    fun getUserLoc(username: String): LatLng? {
-        return this.usersLocations[username]
+    fun getUsersLocations():LiveData< Map<String, LatLng> > {
+        return this.usersLocations
     }
 
-    fun setUserLoc(username: String, loc: LatLng){
-        this.usersLocations[username] = loc
+    fun setUsersLocations(userLocs: Map<String, LatLng>){
+        this.usersLocations.value=userLocs
     }
+
 
 
 }
