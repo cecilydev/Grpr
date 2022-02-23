@@ -39,15 +39,16 @@ class MessageService : FirebaseMessagingService() {
 
 
     override fun onMessageReceived(p0: RemoteMessage) {
+        val broadcast = LocalBroadcastManager.getInstance(this)
+        val intent = Intent(Intent.ACTION_ATTACH_DATA)
         val payload = JSONObject(p0.data["payload"].toString())
         if (payload.getString("action")=="UPDATE") {
-            val data = payload.getString("data")
-            val broadcast = LocalBroadcastManager.getInstance(this)
-            val intent = Intent(Intent.ACTION_ATTACH_DATA)
-            val result = broadcast.sendBroadcast(intent.putExtra("data", payload.getString("data")))
+            broadcast.sendBroadcast(intent.putExtra("data", payload.getString("data")))
+            broadcast.sendBroadcast(intent.putExtra("group_id", ""))
         }
         if (payload.getString("action")=="END"){
-            //handle end here
+            broadcast.sendBroadcast(intent.putExtra("group_id", payload.getString("group_id")))
+            broadcast.sendBroadcast(intent.putExtra("data", ""))
         }
     }
 

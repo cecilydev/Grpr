@@ -57,16 +57,24 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
     private val usersLocListener = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             val data = p1?.getStringExtra("data")
-            val dataArray = JSONArray(data)
-            Log.d("BROADCAST", dataArray.toString())
-            val map = mutableMapOf<String, LatLng>()
-            for (i in 0 until dataArray.length()){
-                val item = dataArray.get(i) as JSONObject
-                map[item.getString("username")] =
-                    LatLng((item.getString("latitude").toDouble()), item.getString("longitude").toDouble())
-
-            }
+            val group = p1?.getStringExtra("group_id")
+            if (data != "") {
+                val dataArray = JSONArray(data)
+                Log.d("BROADCAST", dataArray.toString())
+                val map = mutableMapOf<String, LatLng>()
+                for (i in 0 until dataArray.length()) {
+                    val item = dataArray.get(i) as JSONObject
+                    map[item.getString("username")] =
+                        LatLng(
+                            (item.getString("latitude").toDouble()),
+                            item.getString("longitude").toDouble()
+                        )
+                }
                 locationViewModel.setUsersLocations(map as Map<String, LatLng>)
+            } else {
+                createDialog("CREATOR CLOSED GROUP", getString(R.string.user_closed_group, group), "creator_closed").show()
+                Helper.api.leaveGroup(this@MainActivity, Helper.user.get(this@MainActivity), Helper.user.getSessionKey(this@MainActivity)!!, group!!, null)
+            }
         }
     }
 
@@ -113,6 +121,7 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                             create_close_group_button.tag="close"
                             onJoinSuccess(group)
                             userCreatedGroup=true
+                            createDialog("CREATE GROUP", getString(R.string.new_group, group_id), "create").show()
                         } else {
                             Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
                         }
@@ -328,14 +337,6 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                             override fun processResponse(response: JSONObject) {
                                 if (Helper.api.isSuccess(response)) {
                                     onLeave()
-                                   /* Helper.user.clearGroupId(this@MainActivity)
-                                    unbindService(serviceConnection)
-                                    stopService(Intent(this@MainActivity, LocationService::class.java))
-                                    //group_id="null"
-                                    current_group.text=""
-                                    current_group.visibility = View.GONE
-                                    create_close_group_button.setImageResource(android.R.drawable.ic_input_add)
-                                    create_close_group_button.tag="create"*/
                                 } else {
                                     Toast.makeText(this@MainActivity, Helper.api.getErrorMessage(response), Toast.LENGTH_SHORT).show()
                                 }
@@ -362,6 +363,14 @@ class MainActivity : AppCompatActivity(), loginInterface, joinInterface {
                 })
             setNegativeButton(R.string.cancel, null)
         }
+        }
+        if (type.equals("creator_closed")){
+            builder.apply {
+                setPositiveButton(R.string.ok,
+                    DialogInterface.OnClickListener { dialog, id ->
+                        dialog.dismiss()
+                    })
+            }
         }
         return builder.create()
     }

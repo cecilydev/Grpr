@@ -12,4 +12,5 @@
     <string name="notification_title">Grpr Location</string>
     <string name="notification_message">You are currently sharing your location. Close or leave your current group to stop.</string>
     <string name="new_group">You have created a group with Group ID: %1$s</string>
+    <string name="user_closed_group">The group creator has closed Group %1$s</string>
 </resources>
