@@ -4,14 +4,25 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.*
+import android.widget.ImageButton
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import org.json.JSONArray
 import org.json.JSONObject
+
+const val inGroupMapSize= 0.63f
 
 class DashboardFragment : Fragment() {
 
     lateinit var fab: FloatingActionButton
+    lateinit var map: FragmentContainerView
+    lateinit var messagesView: RecyclerView
+    lateinit var record: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +40,9 @@ class DashboardFragment : Fragment() {
         val layout =  inflater.inflate(R.layout.fragment_dashboard, container, false)
 
         fab = layout.findViewById(R.id.startFloatingActionButton)
+        map = layout.findViewById(R.id.fragmentContainerView2)
+        messagesView = layout.findViewById(R.id.messagesView)
+        record = layout.findViewById(R.id.recordButton)
 
         // Query the server for the current Group ID (if available)
         // and use it to close the group
@@ -53,6 +67,9 @@ class DashboardFragment : Fragment() {
                 (activity as DashboardInterface).createGroup()
             }
 
+        messagesView.visibility = View.GONE
+        record.visibility = View.GONE
+
         return layout
     }
 
@@ -68,10 +85,16 @@ class DashboardFragment : Fragment() {
                 fab.backgroundTintList  = ColorStateList.valueOf(Color.parseColor("#03DAC5"))
                 fab.setImageResource(android.R.drawable.ic_input_add)
                 fab.setOnClickListener {(activity as DashboardInterface).createGroup()}
+                map.updateLayoutParams<ConstraintLayout.LayoutParams> { matchConstraintPercentHeight = 1.0f }
+                messagesView.visibility=View.GONE
+                record.visibility=View.GONE
             } else {
                 fab.backgroundTintList  = ColorStateList.valueOf(Color.parseColor("#e91e63"))
                 fab.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
                 fab.setOnClickListener {(activity as DashboardInterface).endGroup()}
+                map.updateLayoutParams<ConstraintLayout.LayoutParams> { matchConstraintPercentHeight = inGroupMapSize }
+                messagesView.visibility=View.VISIBLE
+                record.visibility=View.VISIBLE
             }
 
         }
