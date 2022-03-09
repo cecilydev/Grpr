@@ -1,7 +1,6 @@
 package edu.temple.grpr
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -13,7 +12,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.ImageButton
-import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.view.updateLayoutParams
@@ -26,11 +24,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.*
+
 
 const val inGroupMapSize= 0.63f
 
@@ -92,14 +86,18 @@ class DashboardFragment : Fragment() {
         messagesView.visibility = View.GONE
         record.visibility = View.GONE
 
+
+        //set record listener
         record.setOnClickListener {
             if (isRecording){
                 stopRecording()
-               //update button
+                record.setImageResource(R.drawable.outline_mic_black_24dp)
+                record.backgroundTintList  = ColorStateList.valueOf(Color.parseColor("#03DAC5"))
                 isRecording = false
             } else {
                 startRecording()
-                //update button
+                record.setImageResource(R.drawable.outline_mic_off_black_24dp)
+                record.backgroundTintList  = ColorStateList.valueOf(Color.parseColor("#e91e63"))
                 isRecording = true
             }
         }
@@ -166,13 +164,17 @@ class DashboardFragment : Fragment() {
     }
 
 
-    @SuppressLint("SimpleDateFormat")
     fun startRecording(){
         val group = Helper.user.getGroupId(requireContext())
         val user = Helper.user.get(requireContext()).username
+        val time = System.currentTimeMillis()
 
-        val filepath = System.currentTimeMillis().toString() + "_" + user + ".3gp"
+        val filepath = time.toString() + "_" + user + ".3gp"
         file = File(activity?.getDir(group, Context.MODE_PRIVATE), filepath)
+        val vm = VoiceMessage(user, time, filepath)
+
+        //add to VM
+        ViewModelProvider(requireActivity()).get(VoiceMessagesViewModel::class.java).addVM(vm)
 
         this.recorder = MediaRecorder().apply {
             setAudioSource(MIC)
@@ -188,7 +190,6 @@ class DashboardFragment : Fragment() {
             start()
         }
 
-
     }
 
     fun stopRecording(){
@@ -197,6 +198,12 @@ class DashboardFragment : Fragment() {
             reset()
             release()
         }
+        recorder = null
+    }
+
+    override fun onStop() {
+        super.onStop()
+        recorder?.release()
         recorder = null
     }
 

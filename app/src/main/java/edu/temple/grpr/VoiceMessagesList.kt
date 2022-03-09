@@ -14,11 +14,11 @@ class VoiceMessagesList() {
         return VMs[index]
     }
 
-    fun getVMByTime(time: String): VoiceMessage{
+    fun getVMByTime(time: Long): VoiceMessage{
         for (i in 0 until VMs.size){
             if (VMs.get(i).time==time) return VMs.get(i)
         }
-        return VoiceMessage("", "", "")
+        return VoiceMessage("", 0, "")
     }
 
     fun createListFromJSONArray(vms: JSONArray){
