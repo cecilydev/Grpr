@@ -1,11 +1,21 @@
 package edu.temple.grpr
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.media.MediaRecorder
+import android.media.MediaRecorder.AudioSource.MIC
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ImageButton
+import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
@@ -14,6 +24,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.IOException
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.*
 
 const val inGroupMapSize= 0.63f
 
@@ -23,6 +40,11 @@ class DashboardFragment : Fragment() {
     lateinit var map: FragmentContainerView
     lateinit var messagesView: RecyclerView
     lateinit var record: ImageButton
+
+    private var isRecording = false
+    private var recorder: MediaRecorder? = null
+    private var file: File? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +92,18 @@ class DashboardFragment : Fragment() {
         messagesView.visibility = View.GONE
         record.visibility = View.GONE
 
+        record.setOnClickListener {
+            if (isRecording){
+                stopRecording()
+               //update button
+                isRecording = false
+            } else {
+                startRecording()
+                //update button
+                isRecording = true
+            }
+        }
+
         return layout
     }
 
@@ -84,7 +118,7 @@ class DashboardFragment : Fragment() {
             if (it.isNullOrEmpty()) {
                 fab.backgroundTintList  = ColorStateList.valueOf(Color.parseColor("#03DAC5"))
                 fab.setImageResource(android.R.drawable.ic_input_add)
-                fab.setOnClickListener {(activity as DashboardInterface).createGroup()}
+                fab.setOnClickListener { (activity as DashboardInterface).createGroup()}
                 map.updateLayoutParams<ConstraintLayout.LayoutParams> { matchConstraintPercentHeight = 1.0f }
                 messagesView.visibility=View.GONE
                 record.visibility=View.GONE
@@ -98,6 +132,9 @@ class DashboardFragment : Fragment() {
             }
 
         }
+
+
+
     }
 
     // This fragment places a menu item in the app bar
@@ -115,7 +152,8 @@ class DashboardFragment : Fragment() {
                 (activity as DashboardInterface).logout()
                 return true
             }
-            R.id.action_join_group -> {
+            R.id.action_join_group ->
+            {
                 (activity as DashboardInterface).joinGroup()
                 return true
             }
@@ -125,6 +163,41 @@ class DashboardFragment : Fragment() {
             }
         }
         return false
+    }
+
+
+    @SuppressLint("SimpleDateFormat")
+    fun startRecording(){
+        val group = Helper.user.getGroupId(requireContext())
+        val user = Helper.user.get(requireContext()).username
+
+        val filepath = System.currentTimeMillis().toString() + "_" + user + ".3gp"
+        file = File(activity?.getDir(group, Context.MODE_PRIVATE), filepath)
+
+        this.recorder = MediaRecorder().apply {
+            setAudioSource(MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setOutputFile(file)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+
+            try {
+                prepare()
+            } catch (e: IOException) {
+                Log.d("ERROR", "startRecording prepare() failed")
+            }
+            start()
+        }
+
+
+    }
+
+    fun stopRecording(){
+        recorder?.apply {
+            stop()
+            reset()
+            release()
+        }
+        recorder = null
     }
 
     interface DashboardInterface {

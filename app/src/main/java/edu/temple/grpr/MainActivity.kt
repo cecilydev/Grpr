@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.messaging.FirebaseMessaging
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -21,6 +20,10 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
     private var serviceIntent: Intent? = null
     private val grprViewModel : GrPrViewModel by lazy {
         ViewModelProvider(this).get(GrPrViewModel::class.java)
+    }
+
+    private val messagesViewModel: VoiceMessagesViewModel by lazy{
+        ViewModelProvider(this).get(VoiceMessagesViewModel::class.java)
     }
 
     // Update ViewModel with location data whenever received from LocationService
@@ -83,16 +86,18 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
         }
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED  &&
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.RECORD_AUDIO
                 ), 1
             )
         }
+
     }
 
     override fun onResume() {
