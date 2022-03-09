@@ -1,6 +1,7 @@
 package edu.temple.grpr
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -12,12 +13,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.json.JSONArray
@@ -105,9 +108,21 @@ class DashboardFragment : Fragment() {
         return layout
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val onClick : (VoiceMessage) -> Unit = {
+                vm: VoiceMessage -> val filename = vm.fileName
+            (activity as DashboardInterface).play(filename)
+        }
+
+        messagesView.layoutManager = LinearLayoutManager(requireContext())
+        messagesView.adapter=VoiceMessagesAdapter(
+            ViewModelProvider(requireActivity()).get(VoiceMessagesViewModel::class.java).getVMs(),
+            Helper.user.get(requireContext()).username,
+            onClick
+        )
 
         // Use ViewModel to determine if we're in an active Group
         // Change FloatingActionButton behavior depending on if we're
@@ -130,6 +145,8 @@ class DashboardFragment : Fragment() {
             }
 
         }
+
+        ViewModelProvider(requireActivity()).get(VoiceMessagesViewModel::class.java).getVMsToObserve().observe(requireActivity()) { view.apply { (messagesView.adapter as VoiceMessagesAdapter).notifyDataSetChanged() } }
 
 
 
@@ -213,6 +230,8 @@ class DashboardFragment : Fragment() {
         fun joinGroup()
         fun leaveGroup()
         fun logout()
+
+        fun play(filename: String)
     }
 
 }

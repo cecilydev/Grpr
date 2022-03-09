@@ -176,6 +176,10 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
             .navigate(R.id.action_dashboardFragment_to_loginFragment)
     }
 
+    override fun play(filename: String) {
+        TODO("Not yet implemented")
+    }
+
     private fun startLocationService() {
         bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
         startService(serviceIntent)
