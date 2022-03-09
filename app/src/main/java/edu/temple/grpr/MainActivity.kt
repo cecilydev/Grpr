@@ -6,7 +6,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.*
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -14,6 +16,8 @@ import androidx.navigation.Navigation
 import com.google.android.gms.maps.model.LatLng
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.IOException
+import java.util.*
 
 class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, GroupFragment.GroupControlInterface {
 
@@ -25,6 +29,9 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
     private val messagesViewModel: VoiceMessagesViewModel by lazy{
         ViewModelProvider(this).get(VoiceMessagesViewModel::class.java)
     }
+
+    var audioQueue: Queue<String> = LinkedList<String>()
+    private var player: MediaPlayer? = null
 
     // Update ViewModel with location data whenever received from LocationService
     private var locationHandler = object : Handler(Looper.myLooper()!!) {
@@ -177,7 +184,13 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
     }
 
     override fun play(filename: String) {
-        TODO("Not yet implemented")
+        Log.d("filename", filename)
+        audioQueue.add(filename)
+        if (audioQueue.size==1){
+            //play audio
+            startPlaying(filename)
+        }
+
     }
 
     private fun startLocationService() {
@@ -225,6 +238,25 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
 
             }
         )
+    }
+
+    private fun startPlaying(filename:String) {
+        val path = getDir(Helper.user.getGroupId(this), MODE_PRIVATE).toString() + "/" + filename
+        player = MediaPlayer().apply {
+            try {
+                setDataSource(path)
+                prepare()
+                start()
+            } catch (e: IOException) {
+                Log.d("ERROR", "prepare() failed")
+            }
+        }
+        player?.setOnCompletionListener {
+            audioQueue.remove()
+            if (audioQueue.size!=0){
+                startPlaying(audioQueue.element())
+            }
+        }
     }
 
 }

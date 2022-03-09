@@ -29,7 +29,7 @@ import java.io.File
 import java.io.IOException
 
 
-const val inGroupMapSize= 0.63f
+const val inGroupMapSize= 0.77f
 
 class DashboardFragment : Fragment() {
 
@@ -123,6 +123,7 @@ class DashboardFragment : Fragment() {
             Helper.user.get(requireContext()).username,
             onClick
         )
+        if((messagesView.adapter as VoiceMessagesAdapter).itemCount!=0) messagesView.smoothScrollToPosition((messagesView.adapter as VoiceMessagesAdapter).itemCount)
 
         // Use ViewModel to determine if we're in an active Group
         // Change FloatingActionButton behavior depending on if we're
@@ -146,7 +147,11 @@ class DashboardFragment : Fragment() {
 
         }
 
-        ViewModelProvider(requireActivity()).get(VoiceMessagesViewModel::class.java).getVMsToObserve().observe(requireActivity()) { view.apply { (messagesView.adapter as VoiceMessagesAdapter).notifyDataSetChanged() } }
+        ViewModelProvider(requireActivity()).get(VoiceMessagesViewModel::class.java).getVMsToObserve().observe(requireActivity()) {
+            view.apply { (messagesView.adapter as VoiceMessagesAdapter).notifyDataSetChanged() }
+            if((messagesView.adapter as VoiceMessagesAdapter).itemCount!=0) messagesView.smoothScrollToPosition((messagesView.adapter as VoiceMessagesAdapter).itemCount)
+
+        }
 
 
 

@@ -1,6 +1,8 @@
 package edu.temple.grpr
 
+import android.annotation.SuppressLint
 import android.service.autofill.TextValueSanitizer
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -56,7 +58,6 @@ class VoiceMessagesAdapter(_messages: VoiceMessagesList, _user: String, _onClick
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        //convert time here
         val time = dateFormatter(messages.get(position).time)
         if (messages.get(position).username == user) {
             (holder as OutMessagesViewHolder).outgoingTime.text =time.toString()
@@ -73,10 +74,11 @@ class VoiceMessagesAdapter(_messages: VoiceMessagesList, _user: String, _onClick
     }
 
 
+    @SuppressLint("SimpleDateFormat")
     fun dateFormatter(epoch: Long): String {
-        val date = Date(epoch * 1000L)
-        val sdf = SimpleDateFormat("MM-dd-yyyy HH:mm:ss")
-        return sdf.format(date)
+       val timeD = Date(epoch)
+       val sdf = SimpleDateFormat("MM-dd HH:mm")
+        return  sdf.format(timeD)
     }
 
 
