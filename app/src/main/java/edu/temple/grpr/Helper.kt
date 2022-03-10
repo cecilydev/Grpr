@@ -263,6 +263,8 @@ class Helper {
             return context.getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE)
         }
 
+
+
         fun registerTokenFlow(context: Context, token: String) {
             if (getToken(context).isNullOrEmpty() && getSessionKey(context) != null) {
                 api.uploadToken(
