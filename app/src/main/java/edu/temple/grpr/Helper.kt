@@ -9,6 +9,9 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.model.LatLng
 import org.json.JSONObject
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 
 /**
  * A helper class to store all functions relating to:
@@ -23,6 +26,8 @@ class Helper {
         val ENDPOINT_USER = "account.php"
 
         val API_BASE = "https://kamorris.com/lab/grpr/"
+
+        private var fileData: ByteArray? = null
 
         interface Response {
             fun processResponse(response: JSONObject)
@@ -118,6 +123,40 @@ class Helper {
             makeRequest(context, ENDPOINT_GROUP, params, response)
         }
 
+        fun sendMessage(context: Context, user:User, sessionKey: String, groupId: String, file:File, response: Response?) {
+            val binary: ByteArray = Files.readAllBytes(file.toPath())
+            val parameters = mutableMapOf(
+                Pair("action", "MESSAGE"),
+                Pair("username", user.username),
+                Pair("session_key", sessionKey),
+                Pair("group_id", groupId),
+                //Pair("message_file", binary)
+            )
+            //makeRequest(context, ENDPOINT_GROUP, params, response)
+            val request = object: VolleyFileUploadRequest(Method.POST, API_BASE+ ENDPOINT_GROUP,
+                 {
+                     Log.d("Server Response", it.toString())
+                     Log.d("DATA", it.data.toString())
+                     Log.d("STATUS", it.statusCode.toString())
+            },
+                {
+                    Log.d("Volley Error", it.toString())
+                }
+            ) {
+                override fun getByteData(): MutableMap<String, FileDataPart> {
+                    val params = HashMap<String, FileDataPart>()
+                    params["message_file"] = FileDataPart(file.name, binary, "video/3gp")
+                    return params
+                }
+
+                override fun getParams(): MutableMap<String, String> {
+                    return parameters
+                }
+
+            }
+            Volley.newRequestQueue(context).add(request)
+        }
+
         private fun makeRequest(context: Context, endPoint: String, params: MutableMap<String, String>, responseCallback: Response?) {
             Volley.newRequestQueue(context)
                 .add(object: StringRequest(Request.Method.POST, API_BASE + endPoint, {
@@ -127,7 +166,9 @@ class Helper {
                     override fun getParams(): MutableMap<String, String> {
                             return params;
                     }
+
                 })
+
         }
 
         fun isSuccess(response: JSONObject): Boolean {
@@ -137,7 +178,6 @@ class Helper {
         fun getErrorMessage(response: JSONObject): String {
             return response.getString("message")
         }
-
     }
 
     object user {

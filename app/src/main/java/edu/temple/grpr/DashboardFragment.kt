@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.view.updateLayoutParams
@@ -221,6 +222,14 @@ class DashboardFragment : Fragment() {
             release()
         }
         recorder = null
+        val cont = requireContext()
+        Helper.api.sendMessage(cont, Helper.user.get(cont), Helper.user.getSessionKey(cont)!!,
+            Helper.user.getGroupId(cont)!!, file!!,  object: Helper.api.Response {
+                override fun processResponse(response: JSONObject) {
+                    if (Helper.api.isSuccess(response)) {
+                        Log.d("MESSAGE", "SUCCESS")
+                    }  }
+            })
     }
 
     override fun onStop() {
