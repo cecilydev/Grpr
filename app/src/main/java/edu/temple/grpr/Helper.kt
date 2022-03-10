@@ -3,12 +3,14 @@ package edu.temple.grpr
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
 import android.util.Log
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.maps.model.LatLng
 import org.json.JSONObject
+import java.io.BufferedInputStream
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -124,7 +126,8 @@ class Helper {
         }
 
         fun sendMessage(context: Context, user:User, sessionKey: String, groupId: String, file:File, response: Response?) {
-            val binary: ByteArray = Files.readAllBytes(file.toPath())
+            val binary: ByteArray = file.readBytes()
+
             val parameters = mutableMapOf(
                 Pair("action", "MESSAGE"),
                 Pair("username", user.username),
@@ -133,29 +136,33 @@ class Helper {
                 //Pair("message_file", binary)
             )
             //makeRequest(context, ENDPOINT_GROUP, params, response)
-            val request = object: VolleyFileUploadRequest(Method.POST, API_BASE+ ENDPOINT_GROUP,
-                 {
-                     Log.d("Server Response", it.toString())
-                     Log.d("DATA", it.data.toString())
-                     Log.d("STATUS", it.statusCode.toString())
-            },
+            val volleyQueue = Volley.newRequestQueue(context)
+            val stringRequest: StringRequest = object : StringRequest(
+                Method.POST, API_BASE+ ENDPOINT_GROUP,
                 {
-                    Log.d("Volley Error", it.toString())
-                }
-            ) {
-                override fun getByteData(): MutableMap<String, FileDataPart> {
-                    val params = HashMap<String, FileDataPart>()
-                    params["message_file"] = FileDataPart(file.name, binary, "video/3gp")
-                    return params
+                  Log.d("SERVER", it.toString())
+                },
+                {})
+            {
+                override fun getBodyContentType(): String {
+                    return "multipart/form-data"
                 }
 
-                override fun getParams(): MutableMap<String, String> {
-                    return parameters
+                override fun getBody(): ByteArray {
+                    val params = mutableMapOf(
+                        Pair("action", "MESSAGE"),
+                        Pair("username", user.username),
+                        Pair("session_key", sessionKey),
+                        Pair("group_id", groupId),
+                        Pair("message_file", binary)
+                    )
+                    return params.toString().toByteArray()
                 }
 
             }
-            Volley.newRequestQueue(context).add(request)
+            volleyQueue.add(stringRequest)
         }
+
 
         private fun makeRequest(context: Context, endPoint: String, params: MutableMap<String, String>, responseCallback: Response?) {
             Volley.newRequestQueue(context)

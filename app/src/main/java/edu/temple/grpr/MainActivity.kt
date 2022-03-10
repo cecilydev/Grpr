@@ -16,7 +16,10 @@ import androidx.navigation.Navigation
 import com.google.android.gms.maps.model.LatLng
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedInputStream
+import java.io.File
 import java.io.IOException
+import java.net.URL
 import java.util.*
 
 class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, GroupFragment.GroupControlInterface {
@@ -61,6 +64,23 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
 
             grprViewModel.setGroup(group)
         }
+    }
+
+    private val messageBroadcastReceiver = object: BroadcastReceiver (){
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            val messageDetail = JSONObject(p1?.getStringExtra(FCMService.MESSAGE_KEY)!!)
+            val group = Helper.user.getGroupId(this@MainActivity)
+            val user = messageDetail.get("username")
+            val time = System.currentTimeMillis()
+
+            val filepath = time.toString() + "_" + user + ".3gp"
+            val file = File(getDir(group, MODE_PRIVATE), filepath)
+
+            //download
+            DownloadAudio(this@MainActivity, audioQueue).execute(messageDetail.getString("message_url"), file.absolutePath)
+
+        }
+
     }
 
     private var serviceConnection: ServiceConnection = object : ServiceConnection {
@@ -110,11 +130,13 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
     override fun onResume() {
         super.onResume()
         registerReceiver(groupBroadcastReceiver, IntentFilter(FCMService.UPDATE_ACTION))
+        registerReceiver(messageBroadcastReceiver, IntentFilter(FCMService.UPDATE_MESSAGE))
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(groupBroadcastReceiver)
+        unregisterReceiver(messageBroadcastReceiver)
     }
 
     private fun createNotificationChannel() {
@@ -259,4 +281,32 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
         }
     }
 
+
+    // CLASS BELOW TAKEN FROM STACKOVERFLOW: https://stackoverflow.com/questions/58142655/kotlin-how-to-download-mp3-file-and-save-to-internal-storage
+    class DownloadAudio(val context: Context, val audio:Queue<String>): AsyncTask<String, String, String>() {
+        override fun doInBackground(vararg p0: String?): String {
+            val url  = URL(p0[0])
+            val connection = url.openConnection()
+            connection.connect()
+            val inputStream = BufferedInputStream(url.openStream())
+            val outputStream = context.openFileOutput(p0[1], Context.MODE_PRIVATE)
+            val data = ByteArray(1024)
+            var count = inputStream.read(data)
+            var total = count
+            while (count != -1) {
+                outputStream.write(data, 0, count)
+                count = inputStream.read(data)
+                total += count
+            }
+            outputStream.flush()
+            outputStream.close()
+            inputStream.close()
+            Log.d("download", "success")
+
+            //upon success, add to queue
+            audio.add(p0[1])
+            return "Success"
+        }
+    }
 }
+

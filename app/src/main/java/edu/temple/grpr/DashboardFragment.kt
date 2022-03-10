@@ -201,7 +201,7 @@ class DashboardFragment : Fragment() {
 
         this.recorder = MediaRecorder().apply {
             setAudioSource(MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setOutputFormat(MediaRecorder.OutputFormat.DEFAULT)
             setOutputFile(file)
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
