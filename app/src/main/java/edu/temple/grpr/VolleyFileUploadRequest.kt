@@ -19,17 +19,17 @@ open class VolleyFileUploadRequest(
         this.responseListener = listener
     }
 
-    private var headers: Map<String, String>? = null
+    //private var headers: Map<String, String>? = null
     private val divider: String = "--"
     private val ending = "\r\n"
     private val boundary = "fileRequest${System.currentTimeMillis()}"
 
 
-    override fun getHeaders(): MutableMap<String, String> =
+    /*override fun getHeaders(): MutableMap<String, String> =
         when(headers) {
             null -> super.getHeaders()
             else -> headers!!.toMutableMap()
-        }
+        }*/
 
     override fun getBodyContentType() = "multipart/form-data;boundary=$boundary"
 

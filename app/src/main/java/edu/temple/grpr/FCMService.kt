@@ -11,6 +11,8 @@ class FCMService : FirebaseMessagingService() {
     companion object {
         val UPDATE_ACTION = "grpr_action_update"
         val UPDATE_KEY = "grpr_update_key"
+        val UPDATE_MESSAGE = "grpr_message_update"
+        val MESSAGE_KEY = "grpr_message_key"
     }
 
     override fun onNewToken(p0: String) {
@@ -27,8 +29,11 @@ class FCMService : FirebaseMessagingService() {
             "UPDATE" -> {
                 sendBroadcast(Intent(UPDATE_ACTION).putExtra(UPDATE_KEY, msg.getJSONArray("data").toString()))
             }
+            "MESSAGE" -> {
+                if (msg.get("username")!=Helper.user.get(this).username)
+                    sendBroadcast(Intent(UPDATE_MESSAGE).putExtra(MESSAGE_KEY, msg.toString()))
+            }
         }
-
 
     }
 
