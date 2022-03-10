@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
         override fun onReceive(p0: Context?, p1: Intent?) {
             val messageDetail = JSONObject(p1?.getStringExtra(FCMService.MESSAGE_KEY)!!)
             val group = Helper.user.getGroupId(this@MainActivity)
-            val user = messageDetail.get("username")
+            val user = messageDetail.getString("username")
             val time = System.currentTimeMillis()
 
             val filepath = time.toString() + "_" + user + ".3gp"
@@ -79,6 +79,8 @@ class MainActivity : AppCompatActivity(), DashboardFragment.DashboardInterface, 
             //download
             DownloadAudio(this@MainActivity, audioQueue).execute(messageDetail.getString("message_url"), file.absolutePath)
 
+            //update view model
+            messagesViewModel.addVM(VoiceMessage(user, time, filepath))
         }
 
     }
